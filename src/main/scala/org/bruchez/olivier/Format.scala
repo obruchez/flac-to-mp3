@@ -17,6 +17,7 @@ object Format {
 
 sealed trait Format {
   def name: String
+  def extension: String
   def ffmpegArguments(bitrate: Bitrate): Seq[String]
   def defaultBitrate: Bitrate
 }
@@ -26,6 +27,8 @@ case object Aac extends Format {
   private val DefaultQuality = 5
 
   override val name: String = "aac"
+
+  override val extension: String = "m4a"
 
   override def ffmpegArguments(bitrate: Bitrate): Seq[String] = BaseFfmpegArguments ++ (bitrate match {
     case Cbr(targetBitrate) => Seq("-b:a", targetBitrate)
@@ -40,6 +43,8 @@ case object Mp3 extends Format {
   private val DefaultQuality = 2
 
   override val name: String = "mp3"
+
+  override val extension: String = "mp3"
 
   override def ffmpegArguments(bitrate: Bitrate): Seq[String] = BaseFfmpegArguments ++ (bitrate match {
     case Cbr(targetBitrate) => Seq("-b:a", targetBitrate)

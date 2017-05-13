@@ -6,12 +6,15 @@ import scala.util._
 
 case class Arguments(srcPath: Path,
                      dstPath: Path,
+                     inputExtensionsToConvert: Set[String] = Arguments.DefaultInputExtensionsToConvert,
                      outputFormat: Format = Aac,
                      outputBitrate: Bitrate = Aac.defaultBitrate) {
   def ffmpegArguments: Seq[String] = outputFormat.ffmpegArguments(outputBitrate)
 }
 
 object Arguments {
+  val DefaultInputExtensionsToConvert = Set("flac", "flv", "m4a", "mp2", "mp3", "mpc", "ogg", "wav")
+
   def apply(args: Array[String]): Try[Arguments] = {
     if (args.length >= 2) {
       val defaultArguments = Arguments(
@@ -40,6 +43,9 @@ object Arguments {
         Success(arguments)
       case arg :: remainingArgs =>
         (arg match {
+          case InputExtensionsToConvertArgument if remainingArgs.nonEmpty =>
+            val extensions = remainingArgs.head.split(",").map(_.trim.toLowerCase).toSet
+            Success((arguments.copy(inputExtensionsToConvert = extensions), remainingArgs.tail))
           case OutputFormatArgument if remainingArgs.nonEmpty =>
             Format.formatFromString(remainingArgs.head) match {
               case Success(format) =>
@@ -67,6 +73,7 @@ object Arguments {
     }
   // scalastyle:on cyclomatic.complexity
 
+  private val InputExtensionsToConvertArgument = "-ext"
   private val OutputFormatArgument = "-f"
   private val ConstantBitrateArgument = "-cbr"
   private val VariableBitrateArgument = "-vbr"
