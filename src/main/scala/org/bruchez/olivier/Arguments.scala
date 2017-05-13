@@ -7,14 +7,16 @@ import scala.util._
 case class Arguments(srcPath: Path,
                      dstPath: Path,
                      outputFormat: Format = Aac,
-                     outputBitrate: Bitrate = Aac.defaultBitrate)
+                     outputBitrate: Bitrate = Aac.defaultBitrate) {
+  def ffmpegArguments: Seq[String] = outputFormat.ffmpegArguments(outputBitrate)
+}
 
 object Arguments {
   def apply(args: Array[String]): Try[Arguments] = {
     if (args.length >= 2) {
       val defaultArguments = Arguments(
-        srcPath = Paths.get(args(args.length - 2)),
-        dstPath = Paths.get(args(args.length - 1)))
+        srcPath = Paths.get(args(args.length - 2)).toAbsolutePath,
+        dstPath = Paths.get(args(args.length - 1)).toAbsolutePath)
 
       val argumentsTry = fromArgs(args = args.slice(0, args.length - 2).toList, arguments = defaultArguments)
 
