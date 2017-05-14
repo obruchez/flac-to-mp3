@@ -4,6 +4,9 @@ import scala.util._
 
 object FlacToMp3 {
   def main(args: Array[String]): Unit = {
+    //FileUtils.dumpExtensionStatistics(java.nio.file.Paths.get(args(0)))
+    //System.exit(0)
+
     Arguments(args) match {
       case Failure(throwable) =>
         System.err.println(throwable.getMessage)
