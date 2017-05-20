@@ -9,7 +9,9 @@ case class Arguments(srcPath: Path,
                      trashPath: Path,
                      inputExtensionsToConvert: Set[String] = Arguments.DefaultInputExtensionsToConvert,
                      outputFormat: Format = Aac,
-                     outputBitrate: Bitrate = Aac.defaultBitrate) {
+                     outputBitrate: Bitrate = Aac.defaultBitrate,
+                     threadCount: Int = 4,
+                     noop: Boolean = false) {
   def formatSpecificFfmpegArguments: Seq[String] = outputFormat.ffmpegArguments(outputBitrate)
 }
 
@@ -67,6 +69,8 @@ object Arguments {
               case Failure(_) =>
                 Failure(new IllegalArgumentException(s"Unexpected quality: ${remainingArgs.head}"))
             }
+          case NoopArgument =>
+            Success((arguments.copy(noop = true), remainingArgs))
           case _ =>
             Failure(new IllegalArgumentException(s"Unexpected argument: $arg"))
         }) match {
@@ -83,4 +87,5 @@ object Arguments {
   private val OutputFormatArgument = "-f"
   private val ConstantBitrateArgument = "-cbr"
   private val VariableBitrateArgument = "-vbr"
+  private val NoopArgument = "-noop"
 }

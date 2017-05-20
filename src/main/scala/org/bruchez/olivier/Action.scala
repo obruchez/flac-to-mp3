@@ -13,15 +13,23 @@ sealed trait Action {
 
 case class ConvertFileAction(srcFile: Path, dstFile: Path) extends Action {
   override def execute()(implicit arguments: Arguments): Future[Unit] = Future {
-    Ffmpeg.convert(srcFile, dstFile).get
-    Files.setLastModifiedTime(dstFile, Files.getLastModifiedTime(srcFile))
+    if (arguments.noop) {
+      println(s"Converting $srcFile to $dstFile")
+    } else {
+      Ffmpeg.convert(srcFile, dstFile).get
+      Files.setLastModifiedTime(dstFile, Files.getLastModifiedTime(srcFile))
+    }
   }
 }
 
 case class CopyFileAction(srcFile: Path, dstFile: Path) extends Action {
   override def execute()(implicit arguments: Arguments): Future[Unit] = Future {
-    Files.copy(srcFile, dstFile)
-    Files.setLastModifiedTime(dstFile, Files.getLastModifiedTime(srcFile))
+    if (arguments.noop) {
+      println(s"Copying $srcFile to $dstFile")
+    } else {
+      Files.copy(srcFile, dstFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
+      Files.setLastModifiedTime(dstFile, Files.getLastModifiedTime(srcFile))
+    }
   }
 }
 
@@ -37,26 +45,37 @@ case class RemoveFileAction(dstFile: Path) extends Action {
 
     val actualTrashPath = nonExistingTrashPath()
 
-    Files.move(dstFile, actualTrashPath)
+    if (arguments.noop) {
+      println(s"Moving $dstFile to trash ($actualTrashPath)")
+    } else {
+      Files.move(dstFile, actualTrashPath)
+    }
   }
 }
 
 case class RemoveSymbolicLinkAction(dstFile: Path) extends Action {
   override def execute()(implicit arguments: Arguments): Future[Unit] = Future {
-    // The delete method will delete the symbolic link, not the target file
-    Files.delete(dstFile)
+    if (arguments.noop) {
+      println(s"Removing symbolic link $dstFile")
+    } else {
+      // The delete method will delete the symbolic link, not the target file
+      Files.delete(dstFile)
+    }
   }
 }
 
-/*
- Algorithm idea:
- - get files from source path
- - get files from destination path
- - method to compare both group of files => return ActionGroups
- - Actions can be parallelized only if they're part of the same group, so groups will be processed one after the other
- - this will allow for the following actions to be executed safely: symbolic links removal, file deletion, conversions
+object Action {
+  def executeActions(actions: Seq[Action])(implicit arguments: Arguments): Unit = {
 
-File comparison:
- - take source files and generate expected list of destination files (.flac -> .m4a, .mpp -> .m4a, etc.)
- - compare expected destination files and actual destination files => generate actions
- */
+    val groupedActions = actions.grouped(arguments.threadCount).toSeq
+
+    for (groupedAction <- groupedActions) {
+
+    }
+
+
+    // @todo
+  }
+}
+
+
