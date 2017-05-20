@@ -7,7 +7,30 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util._
 
-case class ActionGroup(actions: Seq[Action])
+case class ActionGroup(name: String, actions: Seq[Action], parallelExecution: Boolean) {
+  def execute()(implicit arguments: Arguments): Unit = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+
+    val groupedActions = actions.grouped(if (parallelExecution) arguments.threadCount else 1).toSeq
+
+    var errorCount = 0
+
+    for (groupedAction <- groupedActions) {
+      val future = Future.sequence(ActionGroup.lift(groupedAction.map(_.execute())))
+
+      for (unitTry <- Await.result(future, 1 hour)) {
+        unitTry match {
+          case Failure(throwable) =>
+            System.err.println(s"Error: ${throwable.getMessage}")
+            errorCount += 1
+          case Success(_) =>
+        }
+      }
+    }
+
+    println(s"Error count ($name): $errorCount")
+  }
+}
 
 sealed trait Action {
   def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit]
@@ -37,7 +60,7 @@ case class CopyFileAction(srcFile: Path, dstFile: Path) extends Action {
 
 case class RemoveFileAction(dstFile: Path) extends Action {
   override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] = Future {
-    val defaultTrashPath = arguments.trashPath.resolve(dstFile.relativize(arguments.dstPath))
+    val defaultTrashPath = arguments.trashPath.resolve(arguments.dstPath.relativize(dstFile))
 
     @annotation.tailrec
     def nonExistingTrashPath(suffix: Option[Int] = None): Path = {
@@ -66,30 +89,7 @@ case class RemoveSymbolicLinkAction(dstFile: Path) extends Action {
   }
 }
 
-object Action {
-  def executeActions(actions: Seq[Action])(implicit arguments: Arguments): Unit = {
-    import scala.concurrent.ExecutionContext.Implicits.global
-
-    val groupedActions = actions.grouped(arguments.threadCount).toSeq
-
-    var errorCount = 0
-
-    for (groupedAction <- groupedActions) {
-      val future = Future.sequence(lift(groupedAction.map(_.execute())))
-
-      for (unitTry <- Await.result(future, 1 hour)) {
-        unitTry match {
-          case Failure(throwable) =>
-            System.err.println(s"Error: ${throwable.getMessage}")
-            errorCount += 1
-          case Success(_) =>
-        }
-      }
-    }
-
-    println(s"Error count: $errorCount")
-  }
-
+object ActionGroup {
   private def lift[A](futures: Seq[Future[A]])(implicit ec: ExecutionContext): Seq[Future[Try[A]]] =
     futures.map(_.map { Success(_) }.recover { case t => Failure(t) })
 }

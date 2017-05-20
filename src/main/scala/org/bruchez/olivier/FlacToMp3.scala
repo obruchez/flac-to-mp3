@@ -14,23 +14,26 @@ object FlacToMp3 {
         System.err.println(throwable.getMessage)
         System.exit(-1)
       case Success(arguments) =>
-        convert(arguments)
+        //println(s"arguments = $arguments")
+        convert()(arguments)
     }
   }
 
-  def convert(arguments: Arguments): Unit = {
+  def convert()(implicit arguments: Arguments): Unit = {
     println("Parsing source files...")
-    val srcPaths = FileUtils.allFilesInPath(arguments.srcPath).filterNot(FileUtils.osMetadataFile)
+    val srcPaths = FileUtils.allFilesInPath(arguments.srcPath).
+      filterNot(p => FileUtils.osMetadataFile(p) || Files.isDirectory(p))
     println(s"Source file count: ${srcPaths.size}")
 
     println("Parsing destination files...")
-    val dstPaths = FileUtils.allFilesInPath(arguments.dstPath)
+    val dstPaths = FileUtils.allFilesInPath(arguments.dstPath).
+      filterNot(Files.isDirectory(_))
     println(s"Destination file count: ${dstPaths.size}")
 
     val actionGroups = this.actionGroups(srcPaths, dstPaths)
 
     for (actionGroup <- actionGroups) {
-      Action.executeActions(actionGroup.actions)(arguments)
+      actionGroup.execute()
     }
   }
 
@@ -40,11 +43,14 @@ object FlacToMp3 {
    - compare expected destination files and actual destination files => generate actions
    */
 
-  def actionGroups(srcPaths: Seq[Path], dstPaths: Seq[Path]): Seq[ActionGroup] = {
+  private def actionGroups(srcPaths: Seq[Path],
+                           dstPaths: Seq[Path])(implicit arguments: Arguments): Seq[ActionGroup] = {
+    val expectedDestinationPathsBySourcePath = this.expectedDestinationPathsBySourcePath(srcPaths)
+    val expectedDestinationPaths = expectedDestinationPathsBySourcePath.values.toSet
+
     val removeSymbolicLinkActions = dstPaths.filter(Files.isSymbolicLink).map(RemoveSymbolicLinkAction)
 
-    // @todo
-    val removeFileActions = Seq[Action]()
+    val removeFileActions = dstPaths.filterNot(expectedDestinationPaths.contains).map(RemoveFileAction)
 
     // @todo
     val convertFileActions = Seq[Action]()
@@ -53,9 +59,25 @@ object FlacToMp3 {
     val copyFileActions = Seq[Action]()
 
     Seq(
-      ActionGroup(removeSymbolicLinkActions),
-      ActionGroup(removeFileActions),
-      ActionGroup(convertFileActions),
-      ActionGroup(copyFileActions))
+      ActionGroup("Symbolic link removal", removeSymbolicLinkActions, parallelExecution = true),
+      // Do not delete files in parallel, as we're actually moving them to a trash folder and want to avoid name collisions
+      ActionGroup("File removal", removeFileActions, parallelExecution = false),
+      ActionGroup("File conversion", convertFileActions, parallelExecution = true),
+      ActionGroup("File copy", copyFileActions, parallelExecution = true))
+  }
+
+  private def expectedDestinationPathsBySourcePath(srcPaths: Seq[Path])(implicit arguments: Arguments): Map[Path, Path] = {
+    val paths =
+      for {
+        srcPath <- srcPaths
+        (_, srcExtensionOption) = FileUtils.baseNameAndExtension(srcPath)
+      } yield {
+        // @todo
+        val expectedPath = srcPath
+
+        srcPath -> expectedPath
+      }
+
+    Map(paths: _*)
   }
 }
