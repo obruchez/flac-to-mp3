@@ -36,13 +36,7 @@ object FlacToMp3 {
       actionGroup.execute()
     }
   }
-
-  /*
-  File comparison:
-   - take source files and generate expected list of destination files (.flac -> .m4a, .mpp -> .m4a, etc.)
-   - compare expected destination files and actual destination files => generate actions
-   */
-
+  
   private def actionGroups(srcPaths: Seq[Path],
                            dstPaths: Seq[Path])(implicit arguments: Arguments): Seq[ActionGroup] = {
     val expectedDestinationPathsBySourcePath = this.expectedDestinationPathsBySourcePath(srcPaths)
@@ -63,7 +57,8 @@ object FlacToMp3 {
       // Do not delete files in parallel, as we're actually moving them to a trash folder and want to avoid name collisions
       ActionGroup("File removal", removeFileActions, parallelExecution = false),
       ActionGroup("File conversion", convertFileActions, parallelExecution = true),
-      ActionGroup("File copy", copyFileActions, parallelExecution = true))
+      ActionGroup("File copy", copyFileActions, parallelExecution = true),
+      ActionGroup("Empty directory removal", Seq(RemoveEmptyDirectoriesAction(arguments.dstPath)), parallelExecution = false))
   }
 
   private def expectedDestinationPathsBySourcePath(srcPaths: Seq[Path])(implicit arguments: Arguments): Map[Path, Path] = {
@@ -72,8 +67,14 @@ object FlacToMp3 {
         srcPath <- srcPaths
         (_, srcExtensionOption) = FileUtils.baseNameAndExtension(srcPath)
       } yield {
-        // @todo
-        val expectedPath = srcPath
+        val defaultExpectedPath = arguments.dstPath.resolve(arguments.srcPath.relativize(srcPath))
+
+        val expectedPath =
+          if (srcExtensionOption.exists(arguments.inputExtensionsToConvert.contains)) {
+            FileUtils.withExtension(defaultExpectedPath, arguments.outputFormat.extension)
+          } else {
+            defaultExpectedPath
+          }
 
         srcPath -> expectedPath
       }

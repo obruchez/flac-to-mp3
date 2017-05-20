@@ -47,4 +47,7 @@ object FileUtils {
     WindowsThumbsDbFilename.contains(path.toString)
 
   private val WindowsThumbsDbFilename = Seq("Thumbs.db", "desktop.ini", "Desktop.ini")
+
+  def withExtension(path: Path, extension: String): Path =
+    Paths.get(FilenameUtils.removeExtension(path.toString) + s".$extension")
 }

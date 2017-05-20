@@ -41,6 +41,7 @@ case class ConvertFileAction(srcFile: Path, dstFile: Path) extends Action {
     if (arguments.noop) {
       println(s"Converting $srcFile to $dstFile")
     } else {
+      Files.createDirectories(dstFile.getParent)
       Ffmpeg.convert(srcFile, dstFile).get
       Files.setLastModifiedTime(dstFile, Files.getLastModifiedTime(srcFile))
     }
@@ -52,6 +53,7 @@ case class CopyFileAction(srcFile: Path, dstFile: Path) extends Action {
     if (arguments.noop) {
       println(s"Copying $srcFile to $dstFile")
     } else {
+      Files.createDirectories(dstFile.getParent)
       Files.copy(srcFile, dstFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
       Files.setLastModifiedTime(dstFile, Files.getLastModifiedTime(srcFile))
     }
@@ -73,6 +75,7 @@ case class RemoveFileAction(dstFile: Path) extends Action {
     if (arguments.noop) {
       println(s"Moving $dstFile to trash ($actualTrashPath)")
     } else {
+      Files.createDirectories(actualTrashPath.getParent)
       Files.move(dstFile, actualTrashPath)
     }
   }
@@ -85,6 +88,16 @@ case class RemoveSymbolicLinkAction(dstFile: Path) extends Action {
     } else {
       // The delete method will delete the symbolic link, not the target file
       Files.delete(dstFile)
+    }
+  }
+}
+
+case class RemoveEmptyDirectoriesAction(dstPath: Path) extends Action {
+  override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] = Future {
+    if (arguments.noop) {
+      println(s"Removing empty directories in $dstPath")
+    } else {
+      // @todo
     }
   }
 }
