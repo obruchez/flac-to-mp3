@@ -2,17 +2,19 @@ package org.bruchez.olivier
 
 import java.nio.file._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
+import scala.language.postfixOps
+import scala.util._
 
 case class ActionGroup(actions: Seq[Action])
 
 sealed trait Action {
-  def execute()(implicit arguments: Arguments): Future[Unit]
+  def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit]
 }
 
 case class ConvertFileAction(srcFile: Path, dstFile: Path) extends Action {
-  override def execute()(implicit arguments: Arguments): Future[Unit] = Future {
+  override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] = Future {
     if (arguments.noop) {
       println(s"Converting $srcFile to $dstFile")
     } else {
@@ -23,7 +25,7 @@ case class ConvertFileAction(srcFile: Path, dstFile: Path) extends Action {
 }
 
 case class CopyFileAction(srcFile: Path, dstFile: Path) extends Action {
-  override def execute()(implicit arguments: Arguments): Future[Unit] = Future {
+  override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] = Future {
     if (arguments.noop) {
       println(s"Copying $srcFile to $dstFile")
     } else {
@@ -34,7 +36,7 @@ case class CopyFileAction(srcFile: Path, dstFile: Path) extends Action {
 }
 
 case class RemoveFileAction(dstFile: Path) extends Action {
-  override def execute()(implicit arguments: Arguments): Future[Unit] = Future {
+  override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] = Future {
     val defaultTrashPath = arguments.trashPath.resolve(dstFile.relativize(arguments.dstPath))
 
     @annotation.tailrec
@@ -54,7 +56,7 @@ case class RemoveFileAction(dstFile: Path) extends Action {
 }
 
 case class RemoveSymbolicLinkAction(dstFile: Path) extends Action {
-  override def execute()(implicit arguments: Arguments): Future[Unit] = Future {
+  override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] = Future {
     if (arguments.noop) {
       println(s"Removing symbolic link $dstFile")
     } else {
@@ -66,16 +68,28 @@ case class RemoveSymbolicLinkAction(dstFile: Path) extends Action {
 
 object Action {
   def executeActions(actions: Seq[Action])(implicit arguments: Arguments): Unit = {
+    import scala.concurrent.ExecutionContext.Implicits.global
 
     val groupedActions = actions.grouped(arguments.threadCount).toSeq
 
-    for (groupedAction <- groupedActions) {
+    var errorCount = 0
 
+    for (groupedAction <- groupedActions) {
+      val future = Future.sequence(lift(groupedAction.map(_.execute())))
+
+      for (unitTry <- Await.result(future, 1 hour)) {
+        unitTry match {
+          case Failure(throwable) =>
+            System.err.println(s"Error: ${throwable.getMessage}")
+            errorCount += 1
+          case Success(_) =>
+        }
+      }
     }
 
-
-    // @todo
+    println(s"Error count: $errorCount")
   }
+
+  private def lift[A](futures: Seq[Future[A]])(implicit ec: ExecutionContext): Seq[Future[Try[A]]] =
+    futures.map(_.map { Success(_) }.recover { case t => Failure(t) })
 }
-
-
