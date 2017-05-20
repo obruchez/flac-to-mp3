@@ -10,6 +10,7 @@ object Ffmpeg {
     // Copying metadata should be the default behaviour since ffmpeg 3.2
     val cmd = Seq("ffmpeg", "-i", srcPath.toString, "-map_metadata", "0") ++
       arguments.formatSpecificFfmpegArguments :+
+      "-y" :+
       dstPath.toString
 
     Try(cmd.!!)
