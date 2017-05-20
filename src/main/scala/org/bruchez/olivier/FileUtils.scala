@@ -2,9 +2,14 @@ package org.bruchez.olivier
 
 import java.nio.file._
 
+import scala.collection.JavaConverters._
+
 import org.apache.commons.io.FilenameUtils
 
 object FileUtils {
+  def allFilesInPath(path: Path): Seq[Path] =
+    Files.walk(path, FileVisitOption.FOLLOW_LINKS).iterator().asScala.toSeq
+
   def baseNameAndExtension(path: Path): (String, Option[String]) =
     (FilenameUtils.getBaseName(path.toString), Some(FilenameUtils.getExtension(path.toString)).filterNot(_.isEmpty))
 
