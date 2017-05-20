@@ -10,7 +10,7 @@ case class Arguments(srcPath: Path,
                      inputExtensionsToConvert: Set[String] = Arguments.DefaultInputExtensionsToConvert,
                      outputFormat: Format = Aac,
                      outputBitrate: Bitrate = Aac.defaultBitrate,
-                     threadCount: Int = 4,
+                     threadCount: Int = Math.max(1, Runtime.getRuntime.availableProcessors()),
                      noop: Boolean = false) {
   def formatSpecificFfmpegArguments: Seq[String] = outputFormat.ffmpegArguments(outputBitrate)
 }
