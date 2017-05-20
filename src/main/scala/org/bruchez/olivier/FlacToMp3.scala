@@ -36,7 +36,7 @@ object FlacToMp3 {
       actionGroup.execute()
     }
   }
-  
+
   private def actionGroups(srcPaths: Seq[Path],
                            dstPaths: Seq[Path])(implicit arguments: Arguments): Seq[ActionGroup] = {
     val expectedDestinationPathsBySourcePath = this.expectedDestinationPathsBySourcePath(srcPaths)

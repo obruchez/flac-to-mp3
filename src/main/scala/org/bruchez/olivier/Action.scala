@@ -94,10 +94,16 @@ case class RemoveSymbolicLinkAction(dstFile: Path) extends Action {
 
 case class RemoveEmptyDirectoriesAction(dstPath: Path) extends Action {
   override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] = Future {
-    if (arguments.noop) {
-      println(s"Removing empty directories in $dstPath")
-    } else {
-      // @todo
+    for {
+      directory <- FileUtils.allFilesInPath(dstPath).filter(Files.isDirectory(_))
+    } {
+      if (Files.exists(directory) && FileUtils.emptyDirectory(directory)) {
+        if (arguments.noop) {
+          println(s"Removing directory $directory")
+        } else {
+          FileUtils.deleteDirectoryAndAllParentDirectoriesIfEmpty(directory)
+        }
+      }
     }
   }
 }

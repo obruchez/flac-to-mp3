@@ -13,6 +13,13 @@ object FileUtils {
   def baseNameAndExtension(path: Path): (String, Option[String]) =
     (FilenameUtils.getBaseName(path.toString), Some(FilenameUtils.getExtension(path.toString)).filterNot(_.isEmpty))
 
+  @scala.annotation.tailrec
+  def deleteDirectoryAndAllParentDirectoriesIfEmpty(directory: Path): Unit =
+    if (emptyDirectory(directory)) {
+      Files.delete(directory)
+      deleteDirectoryAndAllParentDirectoriesIfEmpty(directory.getParent)
+    }
+
   def dumpExtensionStatistics(path: Path): Unit = {
     import collection.JavaConverters._
 
@@ -33,6 +40,9 @@ object FileUtils {
       println(s"$extension: $count")
     }
   }
+
+  def emptyDirectory(directory: Path): Boolean =
+    Files.newDirectoryStream(directory).asScala.toSeq.isEmpty
 
   def macOsMetadataFile(path: Path): Boolean =
     path.toString == MacOsDsStoreFilename || path.toString.startsWith(MacOsMetadataFilePrefix)
