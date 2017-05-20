@@ -5,8 +5,8 @@ import java.nio.file._
 import org.apache.commons.io.FilenameUtils
 
 object FileUtils {
-  def baseNameAndExtension(filename: String): (String, Option[String]) =
-    (FilenameUtils.getBaseName(filename), Some(FilenameUtils.getExtension(filename)).filterNot(_.isEmpty))
+  def baseNameAndExtension(path: Path): (String, Option[String]) =
+    (FilenameUtils.getBaseName(path.toString), Some(FilenameUtils.getExtension(path.toString)).filterNot(_.isEmpty))
 
   def dumpExtensionStatistics(path: Path): Unit = {
     import collection.JavaConverters._
@@ -15,7 +15,7 @@ object FileUtils {
 
     for {
       path <- Files.walk(path).iterator().asScala
-      (_, extensionOption) = baseNameAndExtension(path.toString)
+      (_, extensionOption) = baseNameAndExtension(path)
       extension <- extensionOption
       extensionNormalized = extension.trim.toLowerCase
       if extensionNormalized.length < 5
@@ -29,17 +29,17 @@ object FileUtils {
     }
   }
 
-  def macOsMetadataFile(filename: String): Boolean =
-    filename == MacOsDsStoreFilename || filename.startsWith(MacOsMetadataFilePrefix)
+  def macOsMetadataFile(path: Path): Boolean =
+    path.toString == MacOsDsStoreFilename || path.toString.startsWith(MacOsMetadataFilePrefix)
 
   private val MacOsDsStoreFilename = ".DS_Store"
   private val MacOsMetadataFilePrefix = "._"
 
-  def osMetadataFile(filename: String): Boolean =
-    macOsMetadataFile(filename) || windowsMetadataFile(filename)
+  def osMetadataFile(path: Path): Boolean =
+    macOsMetadataFile(path) || windowsMetadataFile(path)
 
-  def windowsMetadataFile(filename: String): Boolean =
-    WindowsThumbsDbFilename.contains(filename)
+  def windowsMetadataFile(path: Path): Boolean =
+    WindowsThumbsDbFilename.contains(path.toString)
 
   private val WindowsThumbsDbFilename = Seq("Thumbs.db", "desktop.ini", "Desktop.ini")
 }

@@ -23,7 +23,7 @@ sealed trait Format {
 }
 
 case object Aac extends Format {
-  private val BaseFfmpegArguments = Seq("-c:a", "libmp3lame")
+  private val BaseFfmpegArguments = Seq("-c:a", "libfdk_aac")
   private val DefaultQuality = 5
 
   override val name: String = "aac"
@@ -39,7 +39,7 @@ case object Aac extends Format {
 }
 
 case object Mp3 extends Format {
-  private val BaseFfmpegArguments = Seq("-c:a", "libfdk_aac")
+  private val BaseFfmpegArguments = Seq("-c:a", "libmp3lame", "-id3v2_version", "3")
   private val DefaultQuality = 2
 
   override val name: String = "mp3"

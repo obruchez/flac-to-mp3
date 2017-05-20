@@ -7,7 +7,10 @@ import scala.util.Try
 
 object Ffmpeg {
   def convert(srcPath: Path, dstPath: Path)(implicit arguments: Arguments): Try[Unit] = {
-    val cmd = Seq("ffmpeg", "-i", srcPath.toString) ++ arguments.ffmpegArguments :+ dstPath.toString
+    // Copying metadata should be the default behaviour since ffmpeg 3.2
+    val cmd = Seq("ffmpeg", "-i", srcPath.toString, "-map_metadata", "0") ++
+      arguments.formatSpecificFfmpegArguments :+
+      dstPath.toString
 
     Try(cmd.!!)
   }
