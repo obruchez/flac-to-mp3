@@ -14,7 +14,6 @@ object FlacToMp3 {
         System.err.println(throwable.getMessage)
         System.exit(-1)
       case Success(arguments) =>
-        //println(s"arguments = $arguments")
         convert()(arguments)
     }
   }

@@ -9,10 +9,12 @@ case class Arguments(srcPath: Path,
                      trashPath: Path,
                      inputExtensionsToConvert: Set[String] = Arguments.DefaultInputExtensionsToConvert,
                      outputFormat: Format = Aac,
-                     outputBitrate: Bitrate = Aac.defaultBitrate,
+                     outputBitrateOption: Option[Bitrate] = None,
                      threadCount: Int = Math.max(1, Runtime.getRuntime.availableProcessors()),
                      noop: Boolean = false) {
   def formatSpecificFfmpegArguments: Seq[String] = outputFormat.ffmpegArguments(outputBitrate)
+
+  def outputBitrate: Bitrate = outputBitrateOption.getOrElse(outputFormat.defaultBitrate)
 }
 
 object Arguments {
@@ -61,11 +63,11 @@ object Arguments {
                 Failure(new IllegalArgumentException(s"Unexpected format: ${remainingArgs.head}"))
             }
           case ConstantBitrateArgument if remainingArgs.nonEmpty =>
-            Success((arguments.copy(outputBitrate = Cbr(remainingArgs.head)), remainingArgs.tail))
+            Success((arguments.copy(outputBitrateOption = Some(Cbr(remainingArgs.head))), remainingArgs.tail))
           case VariableBitrateArgument if remainingArgs.nonEmpty =>
             Try(remainingArgs.head.toInt) match {
               case Success(quality) =>
-                Success((arguments.copy(outputBitrate = Vbr(quality)), remainingArgs.tail))
+                Success((arguments.copy(outputBitrateOption = Some(Vbr(quality))), remainingArgs.tail))
               case Failure(_) =>
                 Failure(new IllegalArgumentException(s"Unexpected quality: ${remainingArgs.head}"))
             }
