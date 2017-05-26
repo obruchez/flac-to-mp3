@@ -11,6 +11,7 @@ case class Arguments(srcPath: Path,
                      outputFormat: Format = Aac,
                      outputBitrateOption: Option[Bitrate] = None,
                      threadCount: Int = Math.max(1, Runtime.getRuntime.availableProcessors()),
+                     force: Boolean = false,
                      noop: Boolean = false) {
   def formatSpecificFfmpegArguments: Seq[String] = outputFormat.ffmpegArguments(outputBitrate)
 
@@ -71,6 +72,8 @@ object Arguments {
               case Failure(_) =>
                 Failure(new IllegalArgumentException(s"Unexpected quality: ${remainingArgs.head}"))
             }
+          case ForceArgument =>
+            Success((arguments.copy(force = true), remainingArgs))
           case NoopArgument =>
             Success((arguments.copy(noop = true), remainingArgs))
           case _ =>
@@ -85,9 +88,10 @@ object Arguments {
   // scalastyle:on cyclomatic.complexity
 
   private val TrashPathArgument = "-trash"
-  private val InputExtensionsToConvertArgument = "-ext"
-  private val OutputFormatArgument = "-f"
+  private val InputExtensionsToConvertArgument = "-extensions"
+  private val OutputFormatArgument = "-format"
   private val ConstantBitrateArgument = "-cbr"
   private val VariableBitrateArgument = "-vbr"
+  private val ForceArgument = "-force"
   private val NoopArgument = "-noop"
 }

@@ -77,7 +77,7 @@ object FlacToMp3 {
     val filesToConvertOrCopy =
       for {
         (srcPath, dstPath) <- sourceAndExpectedDestinationPaths
-        if !Files.exists(dstPath) || Files.isSymbolicLink(dstPath) || lastModified(srcPath) > lastModified(dstPath)
+        if !Files.exists(dstPath) || Files.isSymbolicLink(dstPath) || lastModified(srcPath) > lastModified(dstPath) || arguments.force
       } yield (srcPath, dstPath)
 
     val (filesToConvert, filesToCopy) = filesToConvertOrCopy.partition(srcAndDstPaths => mustConvert(srcAndDstPaths._1))
