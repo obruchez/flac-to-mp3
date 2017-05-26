@@ -5,6 +5,13 @@ import java.nio.file.Path
 import scala.sys.process._
 import scala.util._
 
+/*
+ Known ffmpeg problems:
+
+  - metadata from .ogg source files won't be copied to output files
+  - AAC output files (.m4a, .mp4, etc.) won't be able to contain "custom" tags (ReplayGain, MusicBrainz, etc.)
+ */
+
 object Ffmpeg {
   def convert(srcPath: Path, dstPath: Path)(implicit arguments: Arguments): Try[Unit] = {
     // Copying metadata should be the default behaviour since ffmpeg 3.2
