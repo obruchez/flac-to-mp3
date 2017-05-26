@@ -44,8 +44,10 @@ object FileUtils {
   def emptyDirectory(directory: Path): Boolean =
     Files.newDirectoryStream(directory).asScala.toSeq.isEmpty
 
-  def macOsMetadataFile(path: Path): Boolean =
-    path.toString == MacOsDsStoreFilename || path.toString.startsWith(MacOsMetadataFilePrefix)
+  def macOsMetadataFile(path: Path): Boolean = {
+    val filename = path.getFileName.toString
+    filename == MacOsDsStoreFilename || filename.startsWith(MacOsMetadataFilePrefix)
+  }
 
   private val MacOsDsStoreFilename = ".DS_Store"
   private val MacOsMetadataFilePrefix = "._"
@@ -54,9 +56,9 @@ object FileUtils {
     macOsMetadataFile(path) || windowsMetadataFile(path)
 
   def windowsMetadataFile(path: Path): Boolean =
-    WindowsThumbsDbFilename.contains(path.toString)
+    WindowsMetadataFilenames.contains(path.getFileName.toString.toLowerCase)
 
-  private val WindowsThumbsDbFilename = Seq("Thumbs.db", "desktop.ini", "Desktop.ini")
+  private val WindowsMetadataFilenames = Seq("desktop.ini", "ehthumbs.db", "thumbs.db")
 
   def withExtension(path: Path, extension: String): Path =
     Paths.get(FilenameUtils.removeExtension(path.toString) + s".$extension")
