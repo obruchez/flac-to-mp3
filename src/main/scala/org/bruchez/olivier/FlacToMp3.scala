@@ -21,19 +21,47 @@ object FlacToMp3 {
 
   def convert()(implicit arguments: Arguments): Unit = {
     println("Parsing source files...")
-    val srcPaths = FileUtils.allFilesInPath(arguments.srcPath).
-      filterNot(p => FileUtils.osMetadataFile(p) || Files.isDirectory(p))
+
+    val srcPaths =
+      FileUtils.allFilesInPath(arguments.srcPath).filterNot(p => FileUtils.osMetadataFile(p) || Files.isDirectory(p))
+
     println(s"Source file count: ${srcPaths.size}")
+    println()
 
     println("Parsing destination files...")
-    val dstPaths = FileUtils.allFilesInPath(arguments.dstPath).
-      filterNot(Files.isDirectory(_))
+
+    val dstPaths = FileUtils.allFilesInPath(arguments.dstPath).filterNot(Files.isDirectory(_))
+
     println(s"Destination file count: ${dstPaths.size}")
+    println()
 
     val actionGroups = this.actionGroups(srcPaths, dstPaths)
 
+    val totalActionCount = actionGroups.map(_.actions.size).sum
+
+    println(s"Actions to perform ($totalActionCount):")
     for (actionGroup <- actionGroups) {
-      actionGroup.execute()
+      println(s" - ${actionGroup.name} count: ${actionGroup.actions.size}")
+    }
+    println()
+
+    val allActionGroupExecutionErrors = actionGroups.map(_.execute())
+
+    val totalErrorCount = allActionGroupExecutionErrors.map(_.executionErrors.size).sum
+
+    if (totalErrorCount > 0) {
+      println(s"Execution errors ($totalErrorCount):")
+      println()
+
+      for (executionError <- allActionGroupExecutionErrors.flatMap(_.executionErrors)) {
+        println(executionError.error)
+        println()
+      }
+    }
+
+    println(s"Execution error counts ($totalErrorCount):")
+    for (actionGroupExecutionErrors <- allActionGroupExecutionErrors) {
+      println(s" - ${actionGroupExecutionErrors.name}: ${actionGroupExecutionErrors.executionErrors.size}")
     }
   }
 
@@ -69,7 +97,7 @@ object FlacToMp3 {
       ActionGroup("File removal", removeFileActions, parallelExecution = false),
       ActionGroup("File conversion", convertFileActions, parallelExecution = true),
       ActionGroup("File copy", copyFileActions, parallelExecution = true),
-      ActionGroup("Empty directory removal", Seq(RemoveEmptyDirectoriesAction(arguments.dstPath)), parallelExecution = false))
+      ActionGroup("Empty directories removal check", Seq(RemoveEmptyDirectoriesAction(arguments.dstPath)), parallelExecution = false))
   }
 
   private def sourceAndExpectedDestinationPaths(srcPaths: Seq[Path])(implicit arguments: Arguments): Seq[(Path, Path)] =

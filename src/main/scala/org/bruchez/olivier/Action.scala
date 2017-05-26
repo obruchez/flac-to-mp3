@@ -7,28 +7,28 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util._
 
+case class ExecutionError(error: String)
+
+case class ActionGroupExecutionErrors(name: String, executionErrors: Seq[ExecutionError])
+
 case class ActionGroup(name: String, actions: Seq[Action], parallelExecution: Boolean) {
-  def execute()(implicit arguments: Arguments): Unit = {
+  def execute()(implicit arguments: Arguments): ActionGroupExecutionErrors = {
     import scala.concurrent.ExecutionContext.Implicits.global
 
     val groupedActions = actions.grouped(if (parallelExecution) arguments.threadCount else 1).toSeq
 
-    var errorCount = 0
+    val results =
+      for (groupedAction <- groupedActions) yield {
+        val future = Future.sequence(ActionGroup.lift(groupedAction.map(_.execute())))
 
-    for (groupedAction <- groupedActions) {
-      val future = Future.sequence(ActionGroup.lift(groupedAction.map(_.execute())))
-
-      for (unitTry <- Await.result(future, 1 hour)) {
-        unitTry match {
-          case Failure(throwable) =>
-            System.err.println(s"Error: ${throwable.getMessage}")
-            errorCount += 1
-          case Success(_) =>
-        }
+        Await.result(future, 1 hour)
       }
-    }
 
-    println(s"Error count ($name): $errorCount")
+    ActionGroupExecutionErrors(
+      name = this.name,
+      executionErrors = results.flatten.flatMap(_.failed.toOption).map { throwable =>
+        ExecutionError(error = throwable.getMessage.trim)
+      })
   }
 }
 
