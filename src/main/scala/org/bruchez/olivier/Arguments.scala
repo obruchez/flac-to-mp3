@@ -87,6 +87,19 @@ object Arguments {
     }
   // scalastyle:on cyclomatic.complexity
 
+  val usage =
+    s"""Usage: FlacToMp3 [options] source_directory destination_directory
+      |
+      |Options:
+      |
+      |-trash trash_directory   directory where removed destination files will be put (default is destination_directory/.FlacToMp3Trash)
+      |-extensions extensions   comma-separated list of extensions to convert using ffmpeg (default is ${DefaultInputExtensionsToConvert.toSeq.sorted.mkString(",")})
+      |-format format           output format (aac or mp3)
+      |-cbr bitrate             CBR bitrate (e.g. 128k or 192000)
+      |-vbr quality             VBR quality (1-5 for AAC and 0-9 for MP3)
+      |-force                   force convert/copy even if destination file exists and is up-to-date
+      |-noop                    do not convert, copy, or remove any file in the destination directory""".stripMargin
+
   private val TrashPathArgument = "-trash"
   private val InputExtensionsToConvertArgument = "-extensions"
   private val OutputFormatArgument = "-format"

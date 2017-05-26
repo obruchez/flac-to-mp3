@@ -12,6 +12,8 @@ object FlacToMp3 {
     Arguments(args) match {
       case Failure(throwable) =>
         System.err.println(throwable.getMessage)
+        System.err.println()
+        System.err.println(Arguments.usage)
         System.exit(-1)
       case Success(arguments) =>
         convert()(arguments)
