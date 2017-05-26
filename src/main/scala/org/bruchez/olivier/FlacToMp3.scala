@@ -39,18 +39,29 @@ object FlacToMp3 {
 
   private def actionGroups(srcPaths: Seq[Path],
                            dstPaths: Seq[Path])(implicit arguments: Arguments): Seq[ActionGroup] = {
-    val expectedDestinationPathsBySourcePath = this.expectedDestinationPathsBySourcePath(srcPaths)
-    val expectedDestinationPaths = expectedDestinationPathsBySourcePath.values.toSet
+    val sourceAndExpectedDestinationPaths = this.sourceAndExpectedDestinationPaths(srcPaths)
+    val expectedDestinationPaths = sourceAndExpectedDestinationPaths.map(_._2).toSet
+
+    def lastModified(path: Path): Long = Files.getLastModifiedTime(path).toMillis
+
+    def mustConvert(path: Path): Boolean =
+      FileUtils.baseNameAndExtension(path)._2.exists(arguments.inputExtensionsToConvert.contains)
+
+    val filesToConvertOrCopy =
+      for {
+        (srcPath, dstPath) <- sourceAndExpectedDestinationPaths
+        if !Files.exists(dstPath) || Files.isSymbolicLink(dstPath) || lastModified(srcPath) > lastModified(dstPath)
+      } yield (srcPath, dstPath)
+
+    val (filesToConvert, filesToCopy) = filesToConvertOrCopy.partition(srcAndDstPaths => mustConvert(srcAndDstPaths._1))
 
     val removeSymbolicLinkActions = dstPaths.filter(Files.isSymbolicLink).map(RemoveSymbolicLinkAction)
 
     val removeFileActions = dstPaths.filterNot(expectedDestinationPaths.contains).map(RemoveFileAction)
 
-    // @todo
-    val convertFileActions = Seq[Action]()
+    val convertFileActions = filesToConvert.map { case (srcPath, dstPath) => ConvertFileAction(srcPath, dstPath) }
 
-    // @todo
-    val copyFileActions = Seq[Action]()
+    val copyFileActions = filesToCopy.map { case (srcPath, dstPath) => CopyFileAction(srcPath, dstPath) }
 
     Seq(
       ActionGroup("Symbolic link removal", removeSymbolicLinkActions, parallelExecution = true),
@@ -61,24 +72,20 @@ object FlacToMp3 {
       ActionGroup("Empty directory removal", Seq(RemoveEmptyDirectoriesAction(arguments.dstPath)), parallelExecution = false))
   }
 
-  private def expectedDestinationPathsBySourcePath(srcPaths: Seq[Path])(implicit arguments: Arguments): Map[Path, Path] = {
-    val paths =
-      for {
-        srcPath <- srcPaths
-        (_, srcExtensionOption) = FileUtils.baseNameAndExtension(srcPath)
-      } yield {
-        val defaultExpectedPath = arguments.dstPath.resolve(arguments.srcPath.relativize(srcPath))
+  private def sourceAndExpectedDestinationPaths(srcPaths: Seq[Path])(implicit arguments: Arguments): Seq[(Path, Path)] =
+    for {
+      srcPath <- srcPaths
+      (_, srcExtensionOption) = FileUtils.baseNameAndExtension(srcPath)
+    } yield {
+      val defaultExpectedPath = arguments.dstPath.resolve(arguments.srcPath.relativize(srcPath))
 
-        val expectedPath =
-          if (srcExtensionOption.exists(arguments.inputExtensionsToConvert.contains)) {
-            FileUtils.withExtension(defaultExpectedPath, arguments.outputFormat.extension)
-          } else {
-            defaultExpectedPath
-          }
+      val expectedPath =
+        if (srcExtensionOption.exists(arguments.inputExtensionsToConvert.contains)) {
+          FileUtils.withExtension(defaultExpectedPath, arguments.outputFormat.extension)
+        } else {
+          defaultExpectedPath
+        }
 
-        srcPath -> expectedPath
-      }
-
-    Map(paths: _*)
-  }
+      srcPath -> expectedPath
+    }
 }
