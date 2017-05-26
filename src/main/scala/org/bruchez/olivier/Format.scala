@@ -24,7 +24,7 @@ sealed trait Format {
 
 case object Aac extends Format {
   private val BaseFfmpegArguments = Seq("-c:a", "libfdk_aac")
-  private val DefaultQuality = 5
+  private val DefaultQuality = 4
 
   override val name: String = "aac"
 
