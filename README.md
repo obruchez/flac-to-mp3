@@ -2,6 +2,7 @@
 
 Converts a whole directory structure from FLAC (or other audio formats) to MP3 (or AAC), using ffmpeg. Non-audio files are copied.
 
+```
 Usage: FlacToMp3 [options] source_directory destination_directory
 
 Options:
@@ -13,6 +14,7 @@ Options:
 -vbr quality             VBR quality (1-5 for AAC and 0-9 for MP3)
 -force                   force convert/copy even if destination file exists and is up-to-date
 -noop                    do not convert, copy, or remove any file in the destination directory
+```
 
 Current limitations:
 
