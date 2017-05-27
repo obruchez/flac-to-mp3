@@ -1,4 +1,4 @@
-package org.bruchez.olivier
+package org.bruchez.olivier.flactomp3
 
 import scala.util._
 

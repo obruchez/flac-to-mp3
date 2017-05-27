@@ -1,9 +1,9 @@
-package org.bruchez.olivier
+package org.bruchez.olivier.flactomp3
 
 import java.nio.file._
 
-import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.language.postfixOps
 import scala.util._
 
