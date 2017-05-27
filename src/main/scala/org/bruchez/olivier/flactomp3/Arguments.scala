@@ -72,6 +72,13 @@ object Arguments {
               case Failure(_) =>
                 Failure(new IllegalArgumentException(s"Unexpected quality: ${remainingArgs.head}"))
             }
+          case ThreadCountArgument if remainingArgs.nonEmpty =>
+            Try(remainingArgs.head.toInt) match {
+              case Success(count) =>
+                Success((arguments.copy(threadCount = count), remainingArgs.tail))
+              case Failure(_) =>
+                Failure(new IllegalArgumentException(s"Unexpected thread count: ${remainingArgs.head}"))
+            }
           case ForceArgument =>
             Success((arguments.copy(force = true), remainingArgs))
           case NoopArgument =>
@@ -97,6 +104,7 @@ object Arguments {
       |-format format           output format (aac or mp3)
       |-cbr bitrate             CBR bitrate (e.g. 128k or 192000)
       |-vbr quality             VBR quality (1-5 for AAC and 0-9 for MP3)
+      |-threads count           number of parallel threads to use
       |-force                   force convert/copy even if destination file exists and is up-to-date
       |-noop                    do not convert, copy, or remove any file in the destination directory""".stripMargin
 
@@ -105,6 +113,7 @@ object Arguments {
   private val OutputFormatArgument = "-format"
   private val ConstantBitrateArgument = "-cbr"
   private val VariableBitrateArgument = "-vbr"
+  private val ThreadCountArgument = "-threads"
   private val ForceArgument = "-force"
   private val NoopArgument = "-noop"
 }
