@@ -19,7 +19,9 @@ case class ActionGroup(name: String, actions: Seq[Action], parallelExecution: Bo
 
     val results =
       for (groupedAction <- groupedActions) yield {
-        val future = Future.sequence(ActionGroup.lift(groupedAction.map(_.execute())))
+        val future = Future.sequence(ActionGroup.lift(groupedAction.map(_.executeOrNoop())))
+
+        // @todo print success/failure + action description
 
         Await.result(future, 1 hour)
       }
@@ -33,34 +35,41 @@ case class ActionGroup(name: String, actions: Seq[Action], parallelExecution: Bo
 }
 
 sealed trait Action {
-  def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit]
+  def executeOrNoop()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] =
+    if (arguments.noop) {
+      Future { println(s"Noop: $description") }
+    } else {
+      execute()
+    }
+
+  def description: String
+
+  protected def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit]
 }
 
 case class ConvertFileAction(srcFile: Path, dstFile: Path) extends Action {
+  override val description: String = s"converting $srcFile to $dstFile"
+
   override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] = Future {
-    if (arguments.noop) {
-      println(s"Converting $srcFile to $dstFile")
-    } else {
-      Files.createDirectories(dstFile.getParent)
-      Ffmpeg.convert(srcFile, dstFile).get
-      Files.setLastModifiedTime(dstFile, Files.getLastModifiedTime(srcFile))
-    }
+    Files.createDirectories(dstFile.getParent)
+    Ffmpeg.convert(srcFile, dstFile).get
+    Files.setLastModifiedTime(dstFile, Files.getLastModifiedTime(srcFile))
   }
 }
 
 case class CopyFileAction(srcFile: Path, dstFile: Path) extends Action {
+  override val description: String = s"copying $srcFile to $dstFile"
+
   override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] = Future {
-    if (arguments.noop) {
-      println(s"Copying $srcFile to $dstFile")
-    } else {
-      Files.createDirectories(dstFile.getParent)
-      Files.copy(srcFile, dstFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
-      Files.setLastModifiedTime(dstFile, Files.getLastModifiedTime(srcFile))
-    }
+    Files.createDirectories(dstFile.getParent)
+    Files.copy(srcFile, dstFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
+    Files.setLastModifiedTime(dstFile, Files.getLastModifiedTime(srcFile))
   }
 }
 
 case class RemoveFileAction(dstFile: Path) extends Action {
+  override val description: String = s"moving $dstFile to trash"
+
   override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] = Future {
     val defaultTrashPath = arguments.trashPath.resolve(arguments.dstPath.relativize(dstFile))
 
@@ -72,37 +81,29 @@ case class RemoveFileAction(dstFile: Path) extends Action {
 
     val actualTrashPath = nonExistingTrashPath()
 
-    if (arguments.noop) {
-      println(s"Moving $dstFile to trash ($actualTrashPath)")
-    } else {
-      Files.createDirectories(actualTrashPath.getParent)
-      Files.move(dstFile, actualTrashPath)
-    }
+    Files.createDirectories(actualTrashPath.getParent)
+    Files.move(dstFile, actualTrashPath)
   }
 }
 
 case class RemoveSymbolicLinkAction(dstFile: Path) extends Action {
+  override val description: String = s"removing symbolic link $dstFile"
+
   override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] = Future {
-    if (arguments.noop) {
-      println(s"Removing symbolic link $dstFile")
-    } else {
-      // The delete method will delete the symbolic link, not the target file
-      Files.delete(dstFile)
-    }
+    // The delete method will delete the symbolic link, not the target file
+    Files.delete(dstFile)
   }
 }
 
 case class RemoveEmptyDirectoriesAction(dstPath: Path) extends Action {
+  override val description: String = s"removing empty directories in $dstPath"
+
   override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] = Future {
     for {
       directory <- FileUtils.allFilesInPath(dstPath).filter(Files.isDirectory(_))
     } {
       if (Files.exists(directory) && FileUtils.emptyDirectory(directory)) {
-        if (arguments.noop) {
-          println(s"Removing directory $directory")
-        } else {
-          FileUtils.deleteDirectoryAndAllParentDirectoriesIfEmpty(directory)
-        }
+        FileUtils.deleteDirectoryAndAllParentDirectoriesIfEmpty(directory)
       }
     }
   }
