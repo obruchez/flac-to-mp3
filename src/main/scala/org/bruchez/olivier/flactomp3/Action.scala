@@ -19,16 +19,25 @@ case class ActionGroup(name: String, actions: Seq[Action], parallelExecution: Bo
 
     val results =
       for (groupedAction <- groupedActions) yield {
-        val future = Future.sequence(ActionGroup.lift(groupedAction.map(_.executeOrNoop())))
+        val actionResultsFuture = Future.sequence {
+          ActionGroup.lift(groupedAction.map(action => action -> action.executeOrNoop()))
+        }
 
-        // @todo print success/failure + action description
+        val actionResults = Await.result(actionResultsFuture, 1 hour)
 
-        Await.result(future, 1 hour)
+        for ((action, actionResult) <- actionResults) {
+          actionResult match {
+            case Success(_) => println(s"Success: ${action.description}")
+            case Failure(_) => println(s"Failure: ${action.description} (error will be reported at end of execution)")
+          }
+        }
+
+        actionResults
       }
 
     ActionGroupExecutionErrors(
       name = this.name,
-      executionErrors = results.flatten.flatMap(_.failed.toOption).map { throwable =>
+      executionErrors = results.flatten.flatMap(_._2.failed.toOption).map { throwable =>
         ExecutionError(error = throwable.getMessage.trim)
       })
   }
@@ -110,6 +119,9 @@ case class RemoveEmptyDirectoriesAction(dstPath: Path) extends Action {
 }
 
 object ActionGroup {
-  private def lift[A](futures: Seq[Future[A]])(implicit ec: ExecutionContext): Seq[Future[Try[A]]] =
-    futures.map(_.map { Success(_) }.recover { case t => Failure(t) })
+  private def lift[A](futures: Seq[(Action, Future[A])])(implicit ec: ExecutionContext): Seq[Future[(Action, Try[A])]] =
+    futures.map {
+      case (action, future) =>
+        future.map { action -> Success(_) }.recover { case t => action -> Failure(t) }
+    }
 }
