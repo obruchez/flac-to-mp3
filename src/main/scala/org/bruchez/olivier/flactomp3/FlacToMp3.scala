@@ -47,6 +47,7 @@ object FlacToMp3 {
     println()
 
     val allActionGroupExecutionErrors = actionGroups.map(_.execute())
+    println()
 
     val totalErrorCount = allActionGroupExecutionErrors.map(_.executionErrors.size).sum
 
