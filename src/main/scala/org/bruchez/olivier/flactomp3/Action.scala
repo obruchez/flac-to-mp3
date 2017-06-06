@@ -118,6 +118,14 @@ case class RemoveEmptyDirectoriesAction(dstPath: Path) extends Action {
   }
 }
 
+case class CopyCoversToSubDirectoriesAction(dstPath: Path) extends Action {
+  override val description: String = s"copying cover art to sub-directories in $dstPath"
+
+  override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] = Future {
+    // @todo
+  }
+}
+
 object ActionGroup {
   private def lift[A](futures: Seq[(Action, Future[A])])(implicit ec: ExecutionContext): Seq[Future[(Action, Try[A])]] =
     futures.map {

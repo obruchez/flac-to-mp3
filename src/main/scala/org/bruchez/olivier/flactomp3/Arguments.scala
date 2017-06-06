@@ -11,6 +11,7 @@ case class Arguments(srcPath: Path,
                      outputFormat: Format = Aac,
                      outputBitrateOption: Option[Bitrate] = None,
                      threadCount: Int = Math.max(1, Runtime.getRuntime.availableProcessors()),
+                     copyCoversToSubDirectories: Boolean = false,
                      force: Boolean = false,
                      noop: Boolean = false) {
   def formatSpecificFfmpegArguments: Seq[String] = outputFormat.ffmpegArguments(outputBitrate)
@@ -79,6 +80,8 @@ object Arguments {
               case Failure(_) =>
                 Failure(new IllegalArgumentException(s"Unexpected thread count: ${remainingArgs.head}"))
             }
+          case CopyCoversToSubDirectoriesArgument =>
+            Success((arguments.copy(copyCoversToSubDirectories = true), remainingArgs))
           case ForceArgument =>
             Success((arguments.copy(force = true), remainingArgs))
           case NoopArgument =>
@@ -105,6 +108,7 @@ object Arguments {
       |-cbr bitrate             CBR bitrate (e.g. 128k or 192000)
       |-vbr quality             VBR quality (1-5 for AAC and 0-9 for MP3)
       |-threads count           number of parallel threads to use
+      |-copycovers              copy cover art to sub-directories (useful for e.g. Logitech Media Server)
       |-force                   force convert/copy even if destination file exists and is up-to-date
       |-noop                    do not convert, copy, or remove any file in the destination directory""".stripMargin
 
@@ -114,6 +118,7 @@ object Arguments {
   private val ConstantBitrateArgument = "-cbr"
   private val VariableBitrateArgument = "-vbr"
   private val ThreadCountArgument = "-threads"
+  private val CopyCoversToSubDirectoriesArgument = "-copycovers"
   private val ForceArgument = "-force"
   private val NoopArgument = "-noop"
 }
