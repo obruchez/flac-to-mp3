@@ -97,39 +97,33 @@ object FlacToMp3 {
 
     val copyFileActions = filesToCopy.map { case (srcPath, dstPath) => CopyFileAction(srcPath, dstPath) }
 
-    val copyCoversToSubDirectoriesActionGroup =
-      if (arguments.copyCoversToSubDirectories) {
-        Seq(ActionGroup("Cover art copy to sub-directories", Seq(CopyCoversToSubDirectoriesAction(arguments.dstPath)), parallelExecution = false))
-      } else {
-        Seq()
-      }
-
-    val mandatoryActions =
-      Seq(
-        ActionGroup("Symbolic link removal", removeSymbolicLinkActions, parallelExecution = true),
-        // Do not delete files in parallel, as we're actually moving them to a trash folder and want to avoid name collisions
-        ActionGroup("File removal", removeFileActions, parallelExecution = false),
-        ActionGroup("File conversion", convertFileActions, parallelExecution = true),
-        ActionGroup("File copy", copyFileActions, parallelExecution = true),
-        ActionGroup("Empty directories removal check", Seq(RemoveEmptyDirectoriesAction(arguments.dstPath)), parallelExecution = false))
-
-    mandatoryActions ++ copyCoversToSubDirectoriesActionGroup
+    Seq(
+      ActionGroup("Symbolic link removal", removeSymbolicLinkActions, parallelExecution = true),
+      // Do not delete files in parallel, as we're actually moving them to a trash folder and want to avoid name collisions
+      ActionGroup("File removal", removeFileActions, parallelExecution = false),
+      ActionGroup("File conversion", convertFileActions, parallelExecution = true),
+      ActionGroup("File copy", copyFileActions, parallelExecution = true),
+      ActionGroup("Empty directories removal check", Seq(RemoveEmptyDirectoriesAction(arguments.dstPath)), parallelExecution = false))
   }
 
   private def sourceAndExpectedDestinationPaths(srcPaths: Seq[Path])(implicit arguments: Arguments): Seq[(Path, Path)] =
-    for {
+    (for {
       srcPath <- srcPaths
       (_, srcExtensionOption) = FileUtils.baseNameAndExtension(srcPath)
     } yield {
-      val defaultExpectedPath = arguments.dstPath.resolve(arguments.srcPath.relativize(srcPath))
+      lazy val defaultExpectedPath = expectedDestinationPath(srcPath)
 
-      val expectedPath =
-        if (srcExtensionOption.exists(arguments.inputExtensionsToConvert.contains)) {
-          FileUtils.withExtension(defaultExpectedPath, arguments.outputFormat.extension)
-        } else {
-          defaultExpectedPath
-        }
+      if (srcExtensionOption.exists(arguments.inputExtensionsToConvert.contains)) {
+        // File to convert => change extension
+        Seq(srcPath -> FileUtils.withExtension(defaultExpectedPath, arguments.outputFormat.extension))
+      } else if (CovertArt.covertArt(srcPath)) {
+        // Cover art => copy to expected destination, as well as sub-directories if needed
+        (srcPath +: CovertArt.expectedCovertArtSubLocations(srcPath)).map(path => srcPath -> expectedDestinationPath(path))
+      } else {
+        Seq(srcPath -> defaultExpectedPath)
+      }
+    }).flatten
 
-      srcPath -> expectedPath
-    }
+  private def expectedDestinationPath(srcPath: Path)(implicit arguments: Arguments): Path =
+    arguments.dstPath.resolve(arguments.srcPath.relativize(srcPath))
 }
