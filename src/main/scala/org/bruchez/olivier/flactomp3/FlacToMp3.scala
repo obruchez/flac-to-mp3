@@ -24,14 +24,18 @@ object FlacToMp3 {
     println("Parsing source files...")
 
     val srcPaths =
-      FileUtils.allFilesInPath(arguments.srcPath).filterNot(p => FileUtils.osMetadataFile(p) || Files.isDirectory(p))
+      FileUtils.allFilesInPath(arguments.srcPath, recursive = true).
+        filterNot(p => FileUtils.osMetadataFile(p) || Files.isDirectory(p))
 
     println(s"Source file count: ${srcPaths.size}")
     println()
 
     println("Parsing destination files...")
 
-    val dstPaths = FileUtils.allFilesInPath(arguments.dstPath).filterNot(Files.isDirectory(_))
+    val dstPaths =
+      FileUtils.allFilesInPath(arguments.dstPath, recursive = true).
+        filterNot(Files.isDirectory(_)).
+        filterNot(_.startsWith(arguments.trashPath))
 
     println(s"Destination file count: ${dstPaths.size}")
     println()

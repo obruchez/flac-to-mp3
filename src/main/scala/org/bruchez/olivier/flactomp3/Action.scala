@@ -109,7 +109,7 @@ case class RemoveEmptyDirectoriesAction(dstPath: Path) extends Action {
 
   override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] = Future {
     for {
-      directory <- FileUtils.allFilesInPath(dstPath).filter(Files.isDirectory(_))
+      directory <- FileUtils.allFilesInPath(dstPath, recursive = true).filter(Files.isDirectory(_))
     } {
       if (Files.exists(directory) && FileUtils.emptyDirectory(directory)) {
         FileUtils.deleteDirectoryAndAllParentDirectoriesIfEmpty(directory)
@@ -122,8 +122,30 @@ case class CopyCoversToSubDirectoriesAction(dstPath: Path) extends Action {
   override val description: String = s"copying cover art to sub-directories in $dstPath"
 
   override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] = Future {
-    // @todo
+    for {
+      srcFile <- FileUtils.allFilesInPath(dstPath, recursive = true)
+      if Files.isRegularFile(srcFile)
+      if filenames.contains(srcFile.getFileName.toString)
+      subDirectory <- FileUtils.allFilesInPath(srcFile.getParent, recursive = false).filter(Files.isDirectory(_))
+      dstFile = subDirectory.resolve(srcFile.getFileName)
+      if !Files.exists(dstFile)
+      if directoryContainsAudioFiles(subDirectory)
+    } {
+      Files.copy(srcFile, dstFile, StandardCopyOption.COPY_ATTRIBUTES)
+    }
   }
+
+  private def directoryContainsAudioFiles(directory: Path)(implicit arguments: Arguments): Boolean =
+    FileUtils.allFilesInPath(directory, recursive = false).
+      filter(Files.isRegularFile(_)).
+      exists(_.toString.endsWith(arguments.outputFormat.extension))
+
+  private val filenames = Set(
+    "cover.jpg", "cover.gif",
+    "folder.jpg", "folder.gif",
+    "album.jpg", "album.gif",
+    "thumb.jpg", "thumb.gif",
+    "albumartsmall.jpg", "albumartsmall.gif")
 }
 
 object ActionGroup {
