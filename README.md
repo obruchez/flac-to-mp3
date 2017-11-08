@@ -1,6 +1,6 @@
 # flac-to-mp3
 
-Converts a whole directory structure from FLAC (or other audio formats) to MP3 (or AAC), using ffmpeg. Metadata tags are preserved. Non-audio files are copied.
+Convert a whole directory structure from FLAC (or other audio formats) to MP3 (or AAC), using ffmpeg. Metadata tags are preserved. Non-audio files are copied.
 
 ```
 Usage: FlacToMp3 [options] source_directory destination_directory
