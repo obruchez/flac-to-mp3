@@ -15,7 +15,8 @@ object FileUtils {
     }
 
   def baseNameAndExtension(path: Path): (String, Option[String]) =
-    (FilenameUtils.getBaseName(path.toString), Some(FilenameUtils.getExtension(path.toString)).filterNot(_.isEmpty))
+    (FilenameUtils.getBaseName(path.toString),
+     Some(FilenameUtils.getExtension(path.toString)).filterNot(_.isEmpty))
 
   @scala.annotation.tailrec
   def deleteDirectoryAndAllParentDirectoriesIfEmpty(directory: Path): Unit =

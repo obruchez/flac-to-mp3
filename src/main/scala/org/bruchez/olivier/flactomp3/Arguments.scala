@@ -7,7 +7,8 @@ import scala.util._
 case class Arguments(srcPath: Path,
                      dstPath: Path,
                      trashPath: Path,
-                     inputExtensionsToConvert: Set[String] = Arguments.DefaultInputExtensionsToConvert,
+                     inputExtensionsToConvert: Set[String] =
+                       Arguments.DefaultInputExtensionsToConvert,
                      outputFormat: Format = Aac,
                      outputBitrateOption: Option[Bitrate] = None,
                      threadCount: Int = Math.max(1, Runtime.getRuntime.availableProcessors()),
@@ -30,7 +31,8 @@ object Arguments {
 
       val defaultArguments = Arguments(srcPath = srcPath, dstPath = dstPath, trashPath = trashPath)
 
-      val argumentsTry = fromArgs(args = args.slice(0, args.length - 2).toList, arguments = defaultArguments)
+      val argumentsTry =
+        fromArgs(args = args.slice(0, args.length - 2).toList, arguments = defaultArguments)
 
       argumentsTry flatMap { arguments =>
         if (arguments.srcPath.toString == arguments.dstPath.toString) {
@@ -44,7 +46,7 @@ object Arguments {
     }
   }
 
-  // scalastyle:off cyclomatic.complexity
+  // scalastyle:off cyclomatic.complexity method.length
   @annotation.tailrec
   private def fromArgs(args: List[String], arguments: Arguments): Try[Arguments] =
     args match {
@@ -65,11 +67,14 @@ object Arguments {
                 Failure(new IllegalArgumentException(s"Unexpected format: ${remainingArgs.head}"))
             }
           case ConstantBitrateArgument if remainingArgs.nonEmpty =>
-            Success((arguments.copy(outputBitrateOption = Some(Cbr(remainingArgs.head))), remainingArgs.tail))
+            Success(
+              (arguments.copy(outputBitrateOption = Some(Cbr(remainingArgs.head))),
+               remainingArgs.tail))
           case VariableBitrateArgument if remainingArgs.nonEmpty =>
             Try(remainingArgs.head.toInt) match {
               case Success(quality) =>
-                Success((arguments.copy(outputBitrateOption = Some(Vbr(quality))), remainingArgs.tail))
+                Success(
+                  (arguments.copy(outputBitrateOption = Some(Vbr(quality))), remainingArgs.tail))
               case Failure(_) =>
                 Failure(new IllegalArgumentException(s"Unexpected quality: ${remainingArgs.head}"))
             }
@@ -78,7 +83,8 @@ object Arguments {
               case Success(count) =>
                 Success((arguments.copy(threadCount = count), remainingArgs.tail))
               case Failure(_) =>
-                Failure(new IllegalArgumentException(s"Unexpected thread count: ${remainingArgs.head}"))
+                Failure(
+                  new IllegalArgumentException(s"Unexpected thread count: ${remainingArgs.head}"))
             }
           case CopyCoversToSubDirectoriesArgument =>
             Success((arguments.copy(copyCoversToSubDirectories = true), remainingArgs))
@@ -95,7 +101,7 @@ object Arguments {
             Failure(throwable)
         }
     }
-  // scalastyle:on cyclomatic.complexity
+  // scalastyle:on cyclomatic.complexity method.length
 
   val usage =
     s"""Usage: FlacToMp3 [options] source_directory destination_directory
@@ -103,7 +109,8 @@ object Arguments {
       |Options:
       |
       |-trash trash_directory   directory where removed destination files will be put (default is destination_directory/.FlacToMp3Trash)
-      |-extensions extensions   comma-separated list of extensions to convert using ffmpeg (default is ${DefaultInputExtensionsToConvert.toSeq.sorted.mkString(",")})
+      |-extensions extensions   comma-separated list of extensions to convert using ffmpeg (default is ${DefaultInputExtensionsToConvert.toSeq.sorted
+         .mkString(",")})
       |-format format           output format (aac or mp3)
       |-cbr bitrate             CBR bitrate (e.g. 128k or 192000)
       |-vbr quality             VBR quality (1-5 for AAC and 0-9 for MP3)

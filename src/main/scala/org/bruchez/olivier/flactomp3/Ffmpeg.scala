@@ -39,15 +39,20 @@ object Ffmpeg {
     def errorString: String
   }
 
-  private def newStringProcessLogger: ProcessLogger with OutputAndErrorStrings = new ProcessLogger with OutputAndErrorStrings {
-    private val outputStringBuilder = new StringBuilder
-    private val errorStringBuilder = new StringBuilder
+  private def newStringProcessLogger: ProcessLogger with OutputAndErrorStrings =
+    new ProcessLogger with OutputAndErrorStrings {
+      private val outputStringBuilder = new StringBuilder
+      private val errorStringBuilder = new StringBuilder
 
-    override def outputString: String = outputStringBuilder.toString
-    override def errorString: String = errorStringBuilder.toString
+      override def outputString: String = outputStringBuilder.toString
+      override def errorString: String = errorStringBuilder.toString
 
-    override def out(s: => String): Unit = synchronized { outputStringBuilder.append(s + "\n"); () }
-    override def err(s: => String): Unit = synchronized { errorStringBuilder.append(s + "\n"); () }
-    override def buffer[T](f: => T): T = f
-  }
+      override def out(s: => String): Unit = synchronized {
+        outputStringBuilder.append(s + "\n"); ()
+      }
+      override def err(s: => String): Unit = synchronized {
+        errorStringBuilder.append(s + "\n"); ()
+      }
+      override def buffer[T](f: => T): T = f
+    }
 }

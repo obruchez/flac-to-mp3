@@ -20,12 +20,14 @@ object FlacToMp3 {
     }
   }
 
+  // scalastyle:off method.length
   def convert()(implicit arguments: Arguments): Unit = {
     println("Parsing source files...")
 
     val srcPaths =
-      FileUtils.allFilesInPath(arguments.srcPath, recursive = true).
-        filterNot(p => FileUtils.osMetadataFile(p) || Files.isDirectory(p))
+      FileUtils
+        .allFilesInPath(arguments.srcPath, recursive = true)
+        .filterNot(p => FileUtils.osMetadataFile(p) || Files.isDirectory(p))
 
     println(s"Source file count: ${srcPaths.size}")
     println()
@@ -33,9 +35,10 @@ object FlacToMp3 {
     println("Parsing destination files...")
 
     val dstPaths =
-      FileUtils.allFilesInPath(arguments.dstPath, recursive = true).
-        filterNot(Files.isDirectory(_)).
-        filterNot(_.startsWith(arguments.trashPath))
+      FileUtils
+        .allFilesInPath(arguments.dstPath, recursive = true)
+        .filterNot(Files.isDirectory(_))
+        .filterNot(_.startsWith(arguments.trashPath))
 
     println(s"Destination file count: ${dstPaths.size}")
     println()
@@ -67,12 +70,14 @@ object FlacToMp3 {
 
     println(s"Execution error counts ($totalErrorCount):")
     for (actionGroupExecutionErrors <- allActionGroupExecutionErrors) {
-      println(s" - ${actionGroupExecutionErrors.name}: ${actionGroupExecutionErrors.executionErrors.size}")
+      println(
+        s" - ${actionGroupExecutionErrors.name}: ${actionGroupExecutionErrors.executionErrors.size}")
     }
   }
+  // scalastyle:on method.length
 
-  private def actionGroups(srcPaths: Seq[Path],
-                           dstPaths: Seq[Path])(implicit arguments: Arguments): Seq[ActionGroup] = {
+  private def actionGroups(srcPaths: Seq[Path], dstPaths: Seq[Path])(
+      implicit arguments: Arguments): Seq[ActionGroup] = {
     val sourceAndExpectedDestinationPaths = this.sourceAndExpectedDestinationPaths(srcPaths)
     val expectedDestinationPaths = sourceAndExpectedDestinationPaths.map(_._2).toSet
 
@@ -84,18 +89,26 @@ object FlacToMp3 {
     val filesToConvertOrCopy =
       for {
         (srcPath, dstPath) <- sourceAndExpectedDestinationPaths
-        if !Files.exists(dstPath) || Files.isSymbolicLink(dstPath) || lastModified(srcPath) > lastModified(dstPath) || arguments.force
+        if !Files.exists(dstPath) || Files.isSymbolicLink(dstPath) || lastModified(srcPath) > lastModified(
+          dstPath) || arguments.force
       } yield (srcPath, dstPath)
 
-    val (filesToConvert, filesToCopy) = filesToConvertOrCopy.partition(srcAndDstPaths => mustConvert(srcAndDstPaths._1))
+    val (filesToConvert, filesToCopy) =
+      filesToConvertOrCopy.partition(srcAndDstPaths => mustConvert(srcAndDstPaths._1))
 
-    val removeSymbolicLinkActions = dstPaths.filter(Files.isSymbolicLink).map(RemoveSymbolicLinkAction)
+    val removeSymbolicLinkActions =
+      dstPaths.filter(Files.isSymbolicLink).map(RemoveSymbolicLinkAction)
 
-    val removeFileActions = dstPaths.filterNot(expectedDestinationPaths.contains).map(RemoveFileAction)
+    val removeFileActions =
+      dstPaths.filterNot(expectedDestinationPaths.contains).map(RemoveFileAction)
 
-    val convertFileActions = filesToConvert.map { case (srcPath, dstPath) => ConvertFileAction(srcPath, dstPath) }
+    val convertFileActions = filesToConvert.map {
+      case (srcPath, dstPath) => ConvertFileAction(srcPath, dstPath)
+    }
 
-    val copyFileActions = filesToCopy.map { case (srcPath, dstPath) => CopyFileAction(srcPath, dstPath) }
+    val copyFileActions = filesToCopy.map {
+      case (srcPath, dstPath) => CopyFileAction(srcPath, dstPath)
+    }
 
     Seq(
       ActionGroup("Symbolic link removal", removeSymbolicLinkActions, parallelExecution = true),
@@ -103,10 +116,14 @@ object FlacToMp3 {
       ActionGroup("File removal", removeFileActions, parallelExecution = false),
       ActionGroup("File conversion", convertFileActions, parallelExecution = true),
       ActionGroup("File copy", copyFileActions, parallelExecution = true),
-      ActionGroup("Empty directories removal check", Seq(RemoveEmptyDirectoriesAction(arguments.dstPath)), parallelExecution = false))
+      ActionGroup("Empty directories removal check",
+                  Seq(RemoveEmptyDirectoriesAction(arguments.dstPath)),
+                  parallelExecution = false)
+    )
   }
 
-  private def sourceAndExpectedDestinationPaths(srcPaths: Seq[Path])(implicit arguments: Arguments): Seq[(Path, Path)] =
+  private def sourceAndExpectedDestinationPaths(srcPaths: Seq[Path])(
+      implicit arguments: Arguments): Seq[(Path, Path)] =
     (for {
       srcPath <- srcPaths
       (_, srcExtensionOption) = FileUtils.baseNameAndExtension(srcPath)
@@ -115,10 +132,12 @@ object FlacToMp3 {
 
       if (srcExtensionOption.exists(arguments.inputExtensionsToConvert.contains)) {
         // File to convert => change extension
-        Seq(srcPath -> FileUtils.withExtension(defaultExpectedPath, arguments.outputFormat.extension))
+        Seq(
+          srcPath -> FileUtils.withExtension(defaultExpectedPath, arguments.outputFormat.extension))
       } else if (CovertArt.covertArt(srcPath)) {
         // Cover art => copy to expected destination, as well as sub-directories if needed
-        (srcPath +: CovertArt.expectedCovertArtSubLocations(srcPath)).map(path => srcPath -> expectedDestinationPath(path))
+        (srcPath +: CovertArt.expectedCovertArtSubLocations(srcPath)).map(path =>
+          srcPath -> expectedDestinationPath(path))
       } else {
         Seq(srcPath -> defaultExpectedPath)
       }

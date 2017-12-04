@@ -10,7 +10,7 @@ object Format {
 
     formats.find(_.name.trim.toLowerCase == normalizedString) match {
       case Some(format) => Success(format)
-      case None => Failure(new IllegalArgumentException(s"Unexpected format: $string"))
+      case None         => Failure(new IllegalArgumentException(s"Unexpected format: $string"))
     }
   }
 }
@@ -30,10 +30,11 @@ case object Aac extends Format {
 
   override val extension: String = "m4a"
 
-  override def ffmpegArguments(bitrate: Bitrate): Seq[String] = BaseFfmpegArguments ++ (bitrate match {
-    case Cbr(targetBitrate) => Seq("-b:a", targetBitrate)
-    case Vbr(targetQuality) => Seq("-vbr", targetQuality.toString)
-  })
+  override def ffmpegArguments(bitrate: Bitrate): Seq[String] =
+    BaseFfmpegArguments ++ (bitrate match {
+      case Cbr(targetBitrate) => Seq("-b:a", targetBitrate)
+      case Vbr(targetQuality) => Seq("-vbr", targetQuality.toString)
+    })
 
   override val defaultBitrate = Vbr(quality = DefaultQuality)
 }
@@ -46,10 +47,11 @@ case object Mp3 extends Format {
 
   override val extension: String = "mp3"
 
-  override def ffmpegArguments(bitrate: Bitrate): Seq[String] = BaseFfmpegArguments ++ (bitrate match {
-    case Cbr(targetBitrate) => Seq("-b:a", targetBitrate)
-    case Vbr(targetQuality) => Seq("-q:a", targetQuality.toString)
-  })
+  override def ffmpegArguments(bitrate: Bitrate): Seq[String] =
+    BaseFfmpegArguments ++ (bitrate match {
+      case Cbr(targetBitrate) => Seq("-b:a", targetBitrate)
+      case Vbr(targetQuality) => Seq("-q:a", targetQuality.toString)
+    })
 
   override val defaultBitrate = Vbr(quality = DefaultQuality)
 }
