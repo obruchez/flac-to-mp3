@@ -134,9 +134,9 @@ object FlacToMp3 {
         // File to convert => change extension
         Seq(
           srcPath -> FileUtils.withExtension(defaultExpectedPath, arguments.outputFormat.extension))
-      } else if (CovertArt.covertArt(srcPath)) {
+      } else if (CoverArt.coverArt(srcPath)) {
         // Cover art => copy to expected destination, as well as sub-directories if needed
-        (srcPath +: CovertArt.expectedCovertArtSubLocations(srcPath)).map(path =>
+        (srcPath +: CoverArt.expectedCoverArtSubLocations(srcPath)).map(path =>
           srcPath -> expectedDestinationPath(path))
       } else {
         Seq(srcPath -> defaultExpectedPath)

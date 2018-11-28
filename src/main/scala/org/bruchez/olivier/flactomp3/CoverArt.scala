@@ -2,11 +2,11 @@ package org.bruchez.olivier.flactomp3
 
 import java.nio.file.{Files, Path}
 
-object CovertArt {
-  def covertArt(path: Path): Boolean =
+object CoverArt {
+  def coverArt(path: Path): Boolean =
     Files.isRegularFile(path) && filenames.contains(path.getFileName.toString)
 
-  def expectedCovertArtSubLocations(path: Path)(implicit arguments: Arguments): Seq[Path] =
+  def expectedCoverArtSubLocations(path: Path)(implicit arguments: Arguments): Seq[Path] =
     if (arguments.copyCoversToSubDirectories) {
       for {
         subDirectory <- FileUtils
