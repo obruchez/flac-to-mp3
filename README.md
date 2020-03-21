@@ -14,6 +14,7 @@ Options:
 -format format           output format (aac or mp3)
 -cbr bitrate             CBR bitrate (e.g. 128k or 192000)
 -vbr quality             VBR quality (1-5 for AAC and 0-9 for MP3)
+-volume mode             volume mode (track for track ReplayGain application, album for album ReplayGain application)
 -threads count           number of parallel threads to use
 -copycovers              copy cover art to sub-directories (useful for e.g. Logitech Media Server)
 -force                   force convert/copy even if destination file exists and is up-to-date
