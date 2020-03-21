@@ -16,7 +16,7 @@ object Ffmpeg {
   def convert(srcPath: Path, dstPath: Path)(implicit arguments: Arguments): Try[Unit] = {
     // Copying metadata should be the default behaviour since ffmpeg 3.2
     val cmd = Seq("ffmpeg", "-i", srcPath.toString, "-map_metadata", "0") ++
-      arguments.formatSpecificFfmpegArguments :+
+      arguments.ffmpegArguments :+
       "-y" :+
       dstPath.toString
 
