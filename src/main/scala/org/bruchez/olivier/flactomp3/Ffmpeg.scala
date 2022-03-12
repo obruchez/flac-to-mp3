@@ -27,7 +27,8 @@ object Ffmpeg {
         Success(())
       case Failure(throwable) =>
         // ffmpeg outputs everything to the stderr, but merge both stdout and stderr just in case
-        val outputAndErrorStrings = stringProcessLogger.outputString + stringProcessLogger.errorString
+        val outputAndErrorStrings =
+          stringProcessLogger.outputString + stringProcessLogger.errorString
 
         // Include all ffmpeg output for debug purpose
         Failure(new Exception(s"ffmpeg error: ${throwable.getMessage}\n" + outputAndErrorStrings))

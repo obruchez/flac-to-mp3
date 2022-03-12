@@ -1,6 +1,6 @@
 # flac-to-mp3
 
-[![Build Status](https://travis-ci.org/obruchez/flac-to-mp3.svg?branch=master)](https://travis-ci.org/obruchez/flac-to-mp3)
+[![Scala CI](https://github.com/obruchez/flac-to-mp3/actions/workflows/scala.yml/badge.svg)](https://github.com/obruchez/flac-to-mp3/actions/workflows/scala.yml)
 
 Convert a whole directory structure from FLAC (or other audio formats) to MP3 (or AAC), using ffmpeg. Metadata tags are preserved. Non-audio files are copied.
 

@@ -26,16 +26,19 @@ object CoverArt {
       .allFilesInPath(directory, recursive = false)
       .filter(Files.isRegularFile(_))
       .exists(file =>
-        arguments.inputExtensionsToConvert.exists(extension => file.toString.endsWith(extension)))
+        arguments.inputExtensionsToConvert.exists(extension => file.toString.endsWith(extension))
+      )
 
-  private val filenames = Set("cover.jpg",
-                              "cover.gif",
-                              "folder.jpg",
-                              "folder.gif",
-                              "album.jpg",
-                              "album.gif",
-                              "thumb.jpg",
-                              "thumb.gif",
-                              "albumartsmall.jpg",
-                              "albumartsmall.gif")
+  private val filenames = Set(
+    "cover.jpg",
+    "cover.gif",
+    "folder.jpg",
+    "folder.gif",
+    "album.jpg",
+    "album.gif",
+    "thumb.jpg",
+    "thumb.gif",
+    "albumartsmall.jpg",
+    "albumartsmall.gif"
+  )
 }

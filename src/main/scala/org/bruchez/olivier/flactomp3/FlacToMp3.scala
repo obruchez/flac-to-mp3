@@ -6,8 +6,8 @@ import scala.util._
 
 object FlacToMp3 {
   def main(args: Array[String]): Unit = {
-    //FileUtils.dumpExtensionStatistics(java.nio.file.Paths.get(args(0)))
-    //System.exit(0)
+    // FileUtils.dumpExtensionStatistics(java.nio.file.Paths.get(args(0)))
+    // System.exit(0)
 
     Arguments(args) match {
       case Failure(throwable) =>
@@ -71,13 +71,15 @@ object FlacToMp3 {
     println(s"Execution error counts ($totalErrorCount):")
     for (actionGroupExecutionErrors <- allActionGroupExecutionErrors) {
       println(
-        s" - ${actionGroupExecutionErrors.name}: ${actionGroupExecutionErrors.executionErrors.size}")
+        s" - ${actionGroupExecutionErrors.name}: ${actionGroupExecutionErrors.executionErrors.size}"
+      )
     }
   }
   // scalastyle:on method.length
 
-  private def actionGroups(srcPaths: Seq[Path], dstPaths: Seq[Path])(
-      implicit arguments: Arguments): Seq[ActionGroup] = {
+  private def actionGroups(srcPaths: Seq[Path], dstPaths: Seq[Path])(implicit
+      arguments: Arguments
+  ): Seq[ActionGroup] = {
     val sourceAndExpectedDestinationPaths = this.sourceAndExpectedDestinationPaths(srcPaths)
     val expectedDestinationPaths = sourceAndExpectedDestinationPaths.map(_._2).toSet
 
@@ -89,8 +91,9 @@ object FlacToMp3 {
     val filesToConvertOrCopy =
       for {
         (srcPath, dstPath) <- sourceAndExpectedDestinationPaths
-        if !Files.exists(dstPath) || Files.isSymbolicLink(dstPath) || lastModified(srcPath) > lastModified(
-          dstPath) || arguments.force
+        if !Files.exists(dstPath) || Files.isSymbolicLink(dstPath) || lastModified(
+          srcPath
+        ) > lastModified(dstPath) || arguments.force
       } yield (srcPath, dstPath)
 
     val (filesToConvert, filesToCopy) =
@@ -102,12 +105,12 @@ object FlacToMp3 {
     val removeFileActions =
       dstPaths.filterNot(expectedDestinationPaths.contains).map(RemoveFileAction)
 
-    val convertFileActions = filesToConvert.map {
-      case (srcPath, dstPath) => ConvertFileAction(srcPath, dstPath)
+    val convertFileActions = filesToConvert.map { case (srcPath, dstPath) =>
+      ConvertFileAction(srcPath, dstPath)
     }
 
-    val copyFileActions = filesToCopy.map {
-      case (srcPath, dstPath) => CopyFileAction(srcPath, dstPath)
+    val copyFileActions = filesToCopy.map { case (srcPath, dstPath) =>
+      CopyFileAction(srcPath, dstPath)
     }
 
     Seq(
@@ -116,14 +119,17 @@ object FlacToMp3 {
       ActionGroup("File removal", removeFileActions, parallelExecution = false),
       ActionGroup("File conversion", convertFileActions, parallelExecution = true),
       ActionGroup("File copy", copyFileActions, parallelExecution = true),
-      ActionGroup("Empty directories removal check",
-                  Seq(RemoveEmptyDirectoriesAction(arguments.dstPath)),
-                  parallelExecution = false)
+      ActionGroup(
+        "Empty directories removal check",
+        Seq(RemoveEmptyDirectoriesAction(arguments.dstPath)),
+        parallelExecution = false
+      )
     )
   }
 
-  private def sourceAndExpectedDestinationPaths(srcPaths: Seq[Path])(
-      implicit arguments: Arguments): Seq[(Path, Path)] =
+  private def sourceAndExpectedDestinationPaths(
+      srcPaths: Seq[Path]
+  )(implicit arguments: Arguments): Seq[(Path, Path)] =
     (for {
       srcPath <- srcPaths
       (_, srcExtensionOption) = FileUtils.baseNameAndExtension(srcPath)
@@ -133,11 +139,13 @@ object FlacToMp3 {
       if (srcExtensionOption.exists(arguments.inputExtensionsToConvert.contains)) {
         // File to convert => change extension
         Seq(
-          srcPath -> FileUtils.withExtension(defaultExpectedPath, arguments.outputFormat.extension))
+          srcPath -> FileUtils.withExtension(defaultExpectedPath, arguments.outputFormat.extension)
+        )
       } else if (CoverArt.coverArt(srcPath)) {
         // Cover art => copy to expected destination, as well as sub-directories if needed
         (srcPath +: CoverArt.expectedCoverArtSubLocations(srcPath)).map(path =>
-          srcPath -> expectedDestinationPath(path))
+          srcPath -> expectedDestinationPath(path)
+        )
       } else {
         Seq(srcPath -> defaultExpectedPath)
       }

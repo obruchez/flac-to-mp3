@@ -3,18 +3,19 @@ package org.bruchez.olivier.flactomp3
 import java.nio.file._
 import scala.util._
 
-case class Arguments(srcPath: Path,
-                     dstPath: Path,
-                     trashPath: Path,
-                     inputExtensionsToConvert: Set[String] =
-                       Arguments.DefaultInputExtensionsToConvert,
-                     outputFormat: Format = Aac,
-                     outputBitrateOption: Option[Bitrate] = None,
-                     volume: Volume = NoVolumeChange,
-                     threadCount: Int = Math.max(1, Runtime.getRuntime.availableProcessors()),
-                     copyCoversToSubDirectories: Boolean = false,
-                     force: Boolean = false,
-                     noop: Boolean = false) {
+case class Arguments(
+    srcPath: Path,
+    dstPath: Path,
+    trashPath: Path,
+    inputExtensionsToConvert: Set[String] = Arguments.DefaultInputExtensionsToConvert,
+    outputFormat: Format = Aac,
+    outputBitrateOption: Option[Bitrate] = None,
+    volume: Volume = NoVolumeChange,
+    threadCount: Int = Math.max(1, Runtime.getRuntime.availableProcessors()),
+    copyCoversToSubDirectories: Boolean = false,
+    force: Boolean = false,
+    noop: Boolean = false
+) {
   def ffmpegArguments: Seq[String] =
     outputFormat.ffmpegArguments(outputBitrate) ++ volume.ffmpegArguments
 
@@ -69,13 +70,17 @@ object Arguments {
             }
           case ConstantBitrateArgument if remainingArgs.nonEmpty =>
             Success(
-              (arguments.copy(outputBitrateOption = Some(Cbr(remainingArgs.head))),
-               remainingArgs.tail))
+              (
+                arguments.copy(outputBitrateOption = Some(Cbr(remainingArgs.head))),
+                remainingArgs.tail
+              )
+            )
           case VariableBitrateArgument if remainingArgs.nonEmpty =>
             Try(remainingArgs.head.toInt) match {
               case Success(quality) =>
                 Success(
-                  (arguments.copy(outputBitrateOption = Some(Vbr(quality))), remainingArgs.tail))
+                  (arguments.copy(outputBitrateOption = Some(Vbr(quality))), remainingArgs.tail)
+                )
               case Failure(_) =>
                 Failure(new IllegalArgumentException(s"Unexpected quality: ${remainingArgs.head}"))
             }
@@ -87,7 +92,8 @@ object Arguments {
                 Success((arguments.copy(volume = ApplyAlbumReplayGain), remainingArgs.tail))
               case _ =>
                 Failure(
-                  new IllegalArgumentException(s"Unexpected volume mode: ${remainingArgs.head}"))
+                  new IllegalArgumentException(s"Unexpected volume mode: ${remainingArgs.head}")
+                )
             }
           case ThreadCountArgument if remainingArgs.nonEmpty =>
             Try(remainingArgs.head.toInt) match {
@@ -95,7 +101,8 @@ object Arguments {
                 Success((arguments.copy(threadCount = count), remainingArgs.tail))
               case Failure(_) =>
                 Failure(
-                  new IllegalArgumentException(s"Unexpected thread count: ${remainingArgs.head}"))
+                  new IllegalArgumentException(s"Unexpected thread count: ${remainingArgs.head}")
+                )
             }
           case CopyCoversToSubDirectoriesArgument =>
             Success((arguments.copy(copyCoversToSubDirectories = true), remainingArgs))
@@ -121,7 +128,7 @@ object Arguments {
       |
       |-trash trash_directory   directory where removed destination files will be put (default is destination_directory/.FlacToMp3Trash)
       |-extensions extensions   comma-separated list of extensions to convert using ffmpeg (default is ${DefaultInputExtensionsToConvert.toSeq.sorted
-         .mkString(",")})
+      .mkString(",")})
       |-format format           output format (aac or mp3)
       |-cbr bitrate             CBR bitrate (e.g. 128k or 192000)
       |-vbr quality             VBR quality (1-5 for AAC and 0-9 for MP3)

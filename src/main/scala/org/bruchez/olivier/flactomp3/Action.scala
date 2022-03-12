@@ -30,18 +30,20 @@ case class ActionGroup(name: String, actions: Seq[Action], parallelExecution: Bo
             case Success(_) => println(s"Success: ${action.description}")
             case Failure(_) =>
               println(
-                s"Failure: ${action.description} (error will be reported at end of execution)")
+                s"Failure: ${action.description} (error will be reported at end of execution)"
+              )
           }
         }
 
         actionResults
       }
 
-    ActionGroupExecutionErrors(name = this.name,
-                               executionErrors =
-                                 results.flatten.flatMap(_._2.failed.toOption).map { throwable =>
-                                   ExecutionError(error = throwable.getMessage.trim)
-                                 })
+    ActionGroupExecutionErrors(
+      name = this.name,
+      executionErrors = results.flatten.flatMap(_._2.failed.toOption).map { throwable =>
+        ExecutionError(error = throwable.getMessage.trim)
+      }
+    )
   }
 }
 
@@ -75,10 +77,12 @@ case class CopyFileAction(srcFile: Path, dstFile: Path) extends Action {
   override def execute()(implicit arguments: Arguments, ec: ExecutionContext): Future[Unit] =
     Future {
       Files.createDirectories(dstFile.getParent)
-      Files.copy(srcFile,
-                 dstFile,
-                 StandardCopyOption.REPLACE_EXISTING,
-                 StandardCopyOption.COPY_ATTRIBUTES)
+      Files.copy(
+        srcFile,
+        dstFile,
+        StandardCopyOption.REPLACE_EXISTING,
+        StandardCopyOption.COPY_ATTRIBUTES
+      )
       Files.setLastModifiedTime(dstFile, Files.getLastModifiedTime(srcFile))
     }
 }
@@ -135,10 +139,10 @@ case class RemoveEmptyDirectoriesAction(dstPath: Path) extends Action {
 }
 
 object ActionGroup {
-  private def lift[A](futures: Seq[(Action, Future[A])])(
-      implicit ec: ExecutionContext): Seq[Future[(Action, Try[A])]] =
-    futures.map {
-      case (action, future) =>
-        future.map { action -> Success(_) }.recover { case t => action -> Failure(t) }
+  private def lift[A](futures: Seq[(Action, Future[A])])(implicit
+      ec: ExecutionContext
+  ): Seq[Future[(Action, Try[A])]] =
+    futures.map { case (action, future) =>
+      future.map { action -> Success(_) }.recover { case t => action -> Failure(t) }
     }
 }
