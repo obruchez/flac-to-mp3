@@ -75,7 +75,6 @@ object FlacToMp3 {
       )
     }
   }
-  // scalastyle:on method.length
 
   private def actionGroups(srcPaths: Seq[Path], dstPaths: Seq[Path])(implicit
       arguments: Arguments
@@ -109,9 +108,16 @@ object FlacToMp3 {
       ConvertFileAction(srcPath, dstPath)
     }
 
-    val copyFileActions = filesToCopy.map { case (srcPath, dstPath) =>
-      CopyFileAction(srcPath, dstPath)
+    val copyFileActions = {
+      if (!arguments.convertedOnly) {
+        filesToCopy.map { case (srcPath, dstPath) =>
+          CopyFileAction(srcPath, dstPath)
+        }
+      } else {
+        Seq()
+      }
     }
+    // scalastyle:on method.length
 
     Seq(
       ActionGroup("Symbolic link removal", removeSymbolicLinkActions, parallelExecution = true),

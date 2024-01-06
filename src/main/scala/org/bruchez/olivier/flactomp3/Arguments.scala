@@ -12,6 +12,7 @@ case class Arguments(
     outputBitrateOption: Option[Bitrate] = None,
     volume: Volume = NoVolumeChange,
     threadCount: Int = Math.max(1, Runtime.getRuntime.availableProcessors()),
+    convertedOnly: Boolean = false,
     copyCoversToSubDirectories: Boolean = false,
     force: Boolean = false,
     noop: Boolean = false
@@ -23,7 +24,8 @@ case class Arguments(
 }
 
 object Arguments {
-  val DefaultInputExtensionsToConvert = Set("flac", "flv", "m4a", "mp2", "mp3", "mpc", "ogg", "wav")
+  private val DefaultInputExtensionsToConvert =
+    Set("flac", "flv", "m4a", "mp2", "mp3", "mpc", "ogg", "wav")
 
   def apply(args: Array[String]): Try[Arguments] = {
     if (args.length >= 2) {
@@ -104,6 +106,8 @@ object Arguments {
                   new IllegalArgumentException(s"Unexpected thread count: ${remainingArgs.head}")
                 )
             }
+          case ConvertedOnlyArgument =>
+            Success((arguments.copy(convertedOnly = true), remainingArgs))
           case CopyCoversToSubDirectoriesArgument =>
             Success((arguments.copy(copyCoversToSubDirectories = true), remainingArgs))
           case ForceArgument =>
@@ -134,6 +138,7 @@ object Arguments {
       |-vbr quality             VBR quality (1-5 for AAC and 0-9 for MP3)
       |-volume mode             volume mode (track for track ReplayGain application, album for album ReplayGain application)
       |-threads count           number of parallel threads to use
+      |-convertedonly           only copy converted files (i.e. do not copy other files)
       |-copycovers              copy cover art to sub-directories (useful for e.g. Logitech Media Server)
       |-force                   force convert/copy even if destination file exists and is up-to-date
       |-noop                    do not convert, copy, or remove any file in the destination directory""".stripMargin
@@ -145,6 +150,7 @@ object Arguments {
   private val VariableBitrateArgument = "-vbr"
   private val VolumeArgument = "-volume"
   private val ThreadCountArgument = "-threads"
+  private val ConvertedOnlyArgument = "-convertedonly"
   private val CopyCoversToSubDirectoriesArgument = "-copycovers"
   private val ForceArgument = "-force"
   private val NoopArgument = "-noop"

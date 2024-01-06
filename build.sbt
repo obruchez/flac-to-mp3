@@ -1,11 +1,11 @@
 name := "flac-to-mp3"
-version := "1.2"
-scalaVersion := "2.13.8"
+version := "1.3"
+scalaVersion := "2.13.12"
 
-libraryDependencies += "commons-io" % "commons-io" % "2.6"
+libraryDependencies += "commons-io" % "commons-io" % "2.11.0"
 
-mainClass in assembly := Some("org.bruchez.olivier.flactomp3.FlacToMp3")
+assembly / mainClass := Some("org.bruchez.olivier.flactomp3.FlacToMp3")
 
-assemblyJarName in assembly := "flac-to-mp3.jar"
+assembly / assemblyJarName := "flac-to-mp3.jar"
 
-scalafmtOnCompile in ThisBuild := true
+ThisBuild / scalafmtOnCompile := true
