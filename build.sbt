@@ -1,5 +1,5 @@
 name := "flac-to-mp3"
-version := "1.3"
+version := "1.4"
 scalaVersion := "2.13.12"
 
 libraryDependencies += "commons-io" % "commons-io" % "2.11.0"
