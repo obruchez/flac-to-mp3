@@ -10,6 +10,7 @@ Usage: java -jar flac-to-mp3.jar [options] source_directory destination_director
 Options:
 
 -trash trash_directory   directory where removed destination files will be put (default is destination_directory/.FlacToMp3Trash)
+-nodelete                do not delete any file in the destination directory
 -extensions extensions   comma-separated list of extensions to convert using ffmpeg (default is flac,flv,m4a,mp2,mp3,mpc,ogg,wav)
 -format format           output format (aac or mp3)
 -cbr bitrate             CBR bitrate (e.g. 128k or 192000)
