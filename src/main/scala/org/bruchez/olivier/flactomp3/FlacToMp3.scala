@@ -102,7 +102,11 @@ object FlacToMp3 {
       dstPaths.filter(Files.isSymbolicLink).map(RemoveSymbolicLinkAction)
 
     val removeFileActions =
-      dstPaths.filterNot(expectedDestinationPaths.contains).map(RemoveFileAction)
+      if (!arguments.noDelete) {
+        dstPaths.filterNot(expectedDestinationPaths.contains).map(RemoveFileAction)
+      } else {
+        Seq()
+      }
 
     val convertFileActions = filesToConvert.map { case (srcPath, dstPath) =>
       ConvertFileAction(srcPath, dstPath)

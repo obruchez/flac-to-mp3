@@ -7,6 +7,7 @@ case class Arguments(
     srcPath: Path,
     dstPath: Path,
     trashPath: Path,
+    noDelete: Boolean = false,
     inputExtensionsToConvert: Set[String] = Arguments.DefaultInputExtensionsToConvert,
     outputFormat: Format = Aac,
     outputBitrateOption: Option[Bitrate] = None,
@@ -60,6 +61,8 @@ object Arguments {
         (arg match {
           case TrashPathArgument if remainingArgs.nonEmpty =>
             Success((arguments.copy(trashPath = Paths.get(remainingArgs.head)), remainingArgs.tail))
+          case NoDeleteArgument =>
+            Success((arguments.copy(noDelete = true), remainingArgs))
           case InputExtensionsToConvertArgument if remainingArgs.nonEmpty =>
             val extensions = remainingArgs.head.split(",").map(_.trim.toLowerCase).toSet
             Success((arguments.copy(inputExtensionsToConvert = extensions), remainingArgs.tail))
@@ -131,6 +134,7 @@ object Arguments {
       |Options:
       |
       |-trash trash_directory   directory where removed destination files will be put (default is destination_directory/.FlacToMp3Trash)
+      |-nodelete                do not delete any file in the destination directory
       |-extensions extensions   comma-separated list of extensions to convert using ffmpeg (default is ${DefaultInputExtensionsToConvert.toSeq.sorted
       .mkString(",")})
       |-format format           output format (aac or mp3)
@@ -144,6 +148,7 @@ object Arguments {
       |-noop                    do not convert, copy, or remove any file in the destination directory""".stripMargin
 
   private val TrashPathArgument = "-trash"
+  private val NoDeleteArgument = "-nodelete"
   private val InputExtensionsToConvertArgument = "-extensions"
   private val OutputFormatArgument = "-format"
   private val ConstantBitrateArgument = "-cbr"
