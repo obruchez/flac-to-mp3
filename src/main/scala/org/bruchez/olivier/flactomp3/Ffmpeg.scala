@@ -8,14 +8,22 @@ import scala.util._
 /*
  Known ffmpeg problems:
 
-  - metadata from .ogg source files won't be copied to output files
   - AAC output files (.m4a, .mp4, etc.) won't be able to contain "custom" tags (ReplayGain, MusicBrainz, etc.)
  */
 
 object Ffmpeg {
+  // ffmpeg exposes Ogg comments at the stream level, unlike FLAC/MP3/M4A which expose them at
+  // the format level. "-map_metadata 0" therefore copies nothing from an Ogg source. The
+  // stream-level form must stay conditional: on a FLAC source it would drop every tag.
+  private val OggExtensions = Set("ogg", "opus", "oga", "spx")
+
   def convert(srcPath: Path, dstPath: Path)(implicit arguments: Arguments): Try[Unit] = {
+    val extension =
+      srcPath.getFileName.toString.toLowerCase.split('.').lastOption.getOrElse("")
+    val metadataSource = if (OggExtensions.contains(extension)) "0:s:0" else "0"
+
     // Copying metadata should be the default behaviour since ffmpeg 3.2
-    val cmd = Seq("ffmpeg", "-i", srcPath.toString, "-map_metadata", "0") ++
+    val cmd = Seq("ffmpeg", "-i", srcPath.toString, "-map_metadata", metadataSource) ++
       arguments.ffmpegArguments :+
       "-y" :+
       dstPath.toString
